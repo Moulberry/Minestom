@@ -88,7 +88,7 @@ loadScripts(document, 'script');</script>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
+<li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
@@ -122,17 +122,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
-<li><a href="../Event.html" title="class in net.minestom.server.event">net.minestom.server.event.Event</a></li>
-<li>
-<ul class="inheritance">
-<li><a href="../EntityEvent.html" title="class in net.minestom.server.event">net.minestom.server.event.EntityEvent</a></li>
-<li>
-<ul class="inheritance">
 <li>net.minestom.server.event.entity.EntityVelocityEvent</li>
-</ul>
-</li>
-</ul>
-</li>
 </ul>
 </li>
 </ul>
@@ -141,36 +131,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="../CancellableEvent.html" title="interface in net.minestom.server.event">CancellableEvent</a></code></dd>
+<dd><code><a href="../Event.html" title="interface in net.minestom.server.event">Event</a></code>, <code><a href="../trait/CancellableEvent.html" title="interface in net.minestom.server.event.trait">CancellableEvent</a></code>, <code><a href="../trait/EntityEvent.html" title="interface in net.minestom.server.event.trait">EntityEvent</a></code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">EntityVelocityEvent</span>
-extends <a href="../EntityEvent.html" title="class in net.minestom.server.event">EntityEvent</a>
-implements <a href="../CancellableEvent.html" title="interface in net.minestom.server.event">CancellableEvent</a></pre>
-<div class="block">Called when a velocity is applied to an entity using <a href="../../entity/Entity.html#setVelocity(net.minestom.server.utils.Vector)"><code>Entity.setVelocity(Vector)</code></a>.</div>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
+implements <a href="../trait/EntityEvent.html" title="interface in net.minestom.server.event.trait">EntityEvent</a>, <a href="../trait/CancellableEvent.html" title="interface in net.minestom.server.event.trait">CancellableEvent</a></pre>
+<div class="block">Called when a velocity is applied to an entity using <a href="../../entity/Entity.html#setVelocity(net.minestom.server.coordinate.Vec)"><code>Entity.setVelocity(Vec)</code></a>.</div>
 </li>
 </ul>
 </div>
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
-<!-- =========== FIELD SUMMARY =========== -->
-<section role="region">
-<ul class="blockList">
-<li class="blockList"><a id="field.summary">
-<!--   -->
-</a>
-<h3>Field Summary</h3>
-<ul class="blockList">
-<li class="blockList"><a id="fields.inherited.from.class.net.minestom.server.event.EntityEvent">
-<!--   -->
-</a>
-<h3>Fields inherited from class&nbsp;net.minestom.server.event.<a href="../EntityEvent.html" title="class in net.minestom.server.event">EntityEvent</a></h3>
-<code><a href="../EntityEvent.html#entity">entity</a></code></li>
-</ul>
-</li>
-</ul>
-</section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 <section role="region">
 <ul class="blockList">
@@ -185,8 +158,8 @@ implements <a href="../CancellableEvent.html" title="interface in net.minestom.s
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(net.minestom.server.entity.Entity,net.minestom.server.utils.Vector)">EntityVelocityEvent</a></span>&#8203;(@NotNull <a href="../../entity/Entity.html" title="class in net.minestom.server.entity">Entity</a>&nbsp;entity,
-                   @NotNull <a href="../../utils/Vector.html" title="class in net.minestom.server.utils">Vector</a>&nbsp;velocity)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(net.minestom.server.entity.Entity,net.minestom.server.coordinate.Vec)">EntityVelocityEvent</a></span>&#8203;(@NotNull <a href="../../entity/Entity.html" title="class in net.minestom.server.entity">Entity</a>&nbsp;entity,
+                   @NotNull <a href="../../coordinate/Vec.html" title="class in net.minestom.server.coordinate">Vec</a>&nbsp;velocity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -215,7 +188,7 @@ implements <a href="../CancellableEvent.html" title="interface in net.minestom.s
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>@NotNull <a href="../../utils/Vector.html" title="class in net.minestom.server.utils">Vector</a></code></td>
+<td class="colFirst"><code>@NotNull <a href="../../coordinate/Vec.html" title="class in net.minestom.server.coordinate">Vec</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getVelocity()">getVelocity</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Gets the velocity which will be applied.</div>
@@ -225,19 +198,19 @@ implements <a href="../CancellableEvent.html" title="interface in net.minestom.s
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isCancelled()">isCancelled</a></span>()</code></th>
 <td class="colLast">
-<div class="block">Gets if the <a href="../Event.html" title="class in net.minestom.server.event"><code>Event</code></a> should be cancelled or not.</div>
+<div class="block">Gets if the <a href="../Event.html" title="interface in net.minestom.server.event"><code>Event</code></a> should be cancelled or not.</div>
 </td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setCancelled(boolean)">setCancelled</a></span>&#8203;(boolean&nbsp;cancel)</code></th>
 <td class="colLast">
-<div class="block">Marks the <a href="../Event.html" title="class in net.minestom.server.event"><code>Event</code></a> as cancelled or not.</div>
+<div class="block">Marks the <a href="../Event.html" title="interface in net.minestom.server.event"><code>Event</code></a> as cancelled or not.</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setVelocity(net.minestom.server.utils.Vector)">setVelocity</a></span>&#8203;(@NotNull <a href="../../utils/Vector.html" title="class in net.minestom.server.utils">Vector</a>&nbsp;velocity)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setVelocity(net.minestom.server.coordinate.Vec)">setVelocity</a></span>&#8203;(@NotNull <a href="../../coordinate/Vec.html" title="class in net.minestom.server.coordinate">Vec</a>&nbsp;velocity)</code></th>
 <td class="colLast">
 <div class="block">Changes the applied velocity.</div>
 </td>
@@ -266,7 +239,7 @@ implements <a href="../CancellableEvent.html" title="interface in net.minestom.s
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(net.minestom.server.entity.Entity,net.minestom.server.utils.Vector)">
+<a id="&lt;init&gt;(net.minestom.server.entity.Entity,net.minestom.server.coordinate.Vec)">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -275,7 +248,7 @@ implements <a href="../CancellableEvent.html" title="interface in net.minestom.s
 <pre>public&nbsp;EntityVelocityEvent&#8203;(@NotNull
                            @NotNull <a href="../../entity/Entity.html" title="class in net.minestom.server.entity">Entity</a>&nbsp;entity,
                            @NotNull
-                           @NotNull <a href="../../utils/Vector.html" title="class in net.minestom.server.utils">Vector</a>&nbsp;velocity)</pre>
+                           @NotNull <a href="../../coordinate/Vec.html" title="class in net.minestom.server.coordinate">Vec</a>&nbsp;velocity)</pre>
 </li>
 </ul>
 </li>
@@ -298,8 +271,8 @@ implements <a href="../CancellableEvent.html" title="interface in net.minestom.s
 public&nbsp;@NotNull <a href="../../entity/Entity.html" title="class in net.minestom.server.entity">Entity</a>&nbsp;getEntity()</pre>
 <div class="block">Gets the enity who will be affected by <a href="#getVelocity()"><code>getVelocity()</code></a>.</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="../EntityEvent.html#getEntity()">getEntity</a></code>&nbsp;in class&nbsp;<code><a href="../EntityEvent.html" title="class in net.minestom.server.event">EntityEvent</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../trait/EntityEvent.html#getEntity()">getEntity</a></code>&nbsp;in interface&nbsp;<code><a href="../trait/EntityEvent.html" title="interface in net.minestom.server.event.trait">EntityEvent</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the entity</dd>
 </dl>
@@ -312,7 +285,7 @@ public&nbsp;@NotNull <a href="../../entity/Entity.html" title="class in net.mine
 <li class="blockList">
 <h4>getVelocity</h4>
 <pre class="methodSignature">@NotNull
-public&nbsp;@NotNull <a href="../../utils/Vector.html" title="class in net.minestom.server.utils">Vector</a>&nbsp;getVelocity()</pre>
+public&nbsp;@NotNull <a href="../../coordinate/Vec.html" title="class in net.minestom.server.coordinate">Vec</a>&nbsp;getVelocity()</pre>
 <div class="block">Gets the velocity which will be applied.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -320,14 +293,14 @@ public&nbsp;@NotNull <a href="../../utils/Vector.html" title="class in net.mines
 </dl>
 </li>
 </ul>
-<a id="setVelocity(net.minestom.server.utils.Vector)">
+<a id="setVelocity(net.minestom.server.coordinate.Vec)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>setVelocity</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;setVelocity&#8203;(@NotNull
-                        @NotNull <a href="../../utils/Vector.html" title="class in net.minestom.server.utils">Vector</a>&nbsp;velocity)</pre>
+                        @NotNull <a href="../../coordinate/Vec.html" title="class in net.minestom.server.coordinate">Vec</a>&nbsp;velocity)</pre>
 <div class="block">Changes the applied velocity.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -342,11 +315,11 @@ public&nbsp;@NotNull <a href="../../utils/Vector.html" title="class in net.mines
 <li class="blockList">
 <h4>isCancelled</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isCancelled()</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../CancellableEvent.html#isCancelled()">CancellableEvent</a></code></span></div>
-<div class="block">Gets if the <a href="../Event.html" title="class in net.minestom.server.event"><code>Event</code></a> should be cancelled or not.</div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../trait/CancellableEvent.html#isCancelled()">CancellableEvent</a></code></span></div>
+<div class="block">Gets if the <a href="../Event.html" title="interface in net.minestom.server.event"><code>Event</code></a> should be cancelled or not.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../CancellableEvent.html#isCancelled()">isCancelled</a></code>&nbsp;in interface&nbsp;<code><a href="../CancellableEvent.html" title="interface in net.minestom.server.event">CancellableEvent</a></code></dd>
+<dd><code><a href="../trait/CancellableEvent.html#isCancelled()">isCancelled</a></code>&nbsp;in interface&nbsp;<code><a href="../trait/CancellableEvent.html" title="interface in net.minestom.server.event.trait">CancellableEvent</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if the event should be cancelled</dd>
 </dl>
@@ -359,11 +332,11 @@ public&nbsp;@NotNull <a href="../../utils/Vector.html" title="class in net.mines
 <li class="blockList">
 <h4>setCancelled</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;setCancelled&#8203;(boolean&nbsp;cancel)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../CancellableEvent.html#setCancelled(boolean)">CancellableEvent</a></code></span></div>
-<div class="block">Marks the <a href="../Event.html" title="class in net.minestom.server.event"><code>Event</code></a> as cancelled or not.</div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../trait/CancellableEvent.html#setCancelled(boolean)">CancellableEvent</a></code></span></div>
+<div class="block">Marks the <a href="../Event.html" title="interface in net.minestom.server.event"><code>Event</code></a> as cancelled or not.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../CancellableEvent.html#setCancelled(boolean)">setCancelled</a></code>&nbsp;in interface&nbsp;<code><a href="../CancellableEvent.html" title="interface in net.minestom.server.event">CancellableEvent</a></code></dd>
+<dd><code><a href="../trait/CancellableEvent.html#setCancelled(boolean)">setCancelled</a></code>&nbsp;in interface&nbsp;<code><a href="../trait/CancellableEvent.html" title="interface in net.minestom.server.event.trait">CancellableEvent</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>cancel</code> - true if the event should be cancelled, false otherwise</dd>
 </dl>
@@ -421,7 +394,7 @@ public&nbsp;@NotNull <a href="../../utils/Vector.html" title="class in net.mines
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
+<li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>

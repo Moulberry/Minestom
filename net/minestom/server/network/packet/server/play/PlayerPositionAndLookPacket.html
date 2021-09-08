@@ -158,16 +158,21 @@ implements <a href="../ServerPacket.html" title="interface in net.minestom.serve
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#dismountVehicle">dismountVehicle</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>byte</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#flags">flags</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../utils/Position.html" title="class in net.minestom.server.utils">Position</a></code></td>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../coordinate/Pos.html" title="class in net.minestom.server.coordinate">Pos</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#position">position</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#teleportId">teleportId</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -191,6 +196,13 @@ implements <a href="../ServerPacket.html" title="interface in net.minestom.serve
 </tr>
 <tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E()">PlayerPositionAndLookPacket</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(net.minestom.server.coordinate.Pos,byte,int,boolean)">PlayerPositionAndLookPacket</a></span>&#8203;(<a href="../../../../coordinate/Pos.html" title="class in net.minestom.server.coordinate">Pos</a>&nbsp;position,
+                           byte&nbsp;flags,
+                           int&nbsp;teleportId,
+                           boolean&nbsp;dismountVehicle)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -262,7 +274,7 @@ implements <a href="../ServerPacket.html" title="interface in net.minestom.serve
 <ul class="blockList">
 <li class="blockList">
 <h4>position</h4>
-<pre>public&nbsp;<a href="../../../../utils/Position.html" title="class in net.minestom.server.utils">Position</a> position</pre>
+<pre>public&nbsp;<a href="../../../../coordinate/Pos.html" title="class in net.minestom.server.coordinate">Pos</a> position</pre>
 </li>
 </ul>
 <a id="flags">
@@ -277,10 +289,19 @@ implements <a href="../ServerPacket.html" title="interface in net.minestom.serve
 <a id="teleportId">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>teleportId</h4>
 <pre>public&nbsp;int teleportId</pre>
+</li>
+</ul>
+<a id="dismountVehicle">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>dismountVehicle</h4>
+<pre>public&nbsp;boolean dismountVehicle</pre>
 </li>
 </ul>
 </li>
@@ -293,6 +314,18 @@ implements <a href="../ServerPacket.html" title="interface in net.minestom.serve
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
+<a id="&lt;init&gt;(net.minestom.server.coordinate.Pos,byte,int,boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PlayerPositionAndLookPacket</h4>
+<pre>public&nbsp;PlayerPositionAndLookPacket&#8203;(<a href="../../../../coordinate/Pos.html" title="class in net.minestom.server.coordinate">Pos</a>&nbsp;position,
+                                   byte&nbsp;flags,
+                                   int&nbsp;teleportId,
+                                   boolean&nbsp;dismountVehicle)</pre>
+</li>
+</ul>
 <a id="&lt;init&gt;()">
 <!--   -->
 </a>
