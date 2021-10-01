@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -319,13 +319,20 @@ implements <a href="../Viewable.html" title="interface in net.minestom.server">V
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#onClosed(net.minestom.server.entity.Player)">onClosed</a></span>&#8203;(@NotNull <a href="../entity/Player.html" title="class in net.minestom.server.entity">Player</a>&nbsp;player)</code></th>
+<td class="colLast">
+<div class="block">Called when the inventory is closed via <a href="../entity/Player.html#closeInventory()"><code>Player.closeInventory()</code></a>.</div>
+</td>
+</tr>
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeViewer(net.minestom.server.entity.Player)">removeViewer</a></span>&#8203;(@NotNull <a href="../entity/Player.html" title="class in net.minestom.server.entity">Player</a>&nbsp;player)</code></th>
 <td class="colLast">
 <div class="block">This will not close the inventory for <code>player</code>, use <a href="../entity/Player.html#closeInventory()"><code>Player.closeInventory()</code></a>.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rightClick(net.minestom.server.entity.Player,int)">rightClick</a></span>&#8203;(@NotNull <a href="../entity/Player.html" title="class in net.minestom.server.entity">Player</a>&nbsp;player,
           int&nbsp;slot)</code></th>
@@ -333,7 +340,7 @@ implements <a href="../Viewable.html" title="interface in net.minestom.server">V
 <div class="block">Called when a <a href="../entity/Player.html" title="class in net.minestom.server.entity"><code>Player</code></a> right click in the inventory.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sendProperty(net.minestom.server.inventory.InventoryProperty,short)">sendProperty</a></span>&#8203;(@NotNull <a href="InventoryProperty.html" title="enum in net.minestom.server.inventory">InventoryProperty</a>&nbsp;property,
             short&nbsp;value)</code></th>
@@ -341,7 +348,7 @@ implements <a href="../Viewable.html" title="interface in net.minestom.server">V
 <div class="block">Sends a window property to all viewers.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setCursorItem(net.minestom.server.entity.Player,net.minestom.server.item.ItemStack)">setCursorItem</a></span>&#8203;(@NotNull <a href="../entity/Player.html" title="class in net.minestom.server.entity">Player</a>&nbsp;player,
              @NotNull <a href="../item/ItemStack.html" title="class in net.minestom.server.item">ItemStack</a>&nbsp;cursorItem)</code></th>
@@ -350,14 +357,14 @@ implements <a href="../Viewable.html" title="interface in net.minestom.server">V
  does nothing if <code>player</code> is not a viewer.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setTitle(net.kyori.adventure.text.Component)">setTitle</a></span>&#8203;(@NotNull <a href="https://jd.adventure.kyori.net/api/4.8.1/net/kyori/adventure/text/Component.html?is-external=true" title="class or interface in net.kyori.adventure.text" class="externalLink">Component</a>&nbsp;title)</code></th>
 <td class="colLast">
 <div class="block">Changes the inventory title.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shiftClick(net.minestom.server.entity.Player,int)">shiftClick</a></span>&#8203;(@NotNull <a href="../entity/Player.html" title="class in net.minestom.server.entity">Player</a>&nbsp;player,
           int&nbsp;slot)</code></th>
@@ -365,20 +372,20 @@ implements <a href="../Viewable.html" title="interface in net.minestom.server">V
 <div class="block">Called when a <a href="../entity/Player.html" title="class in net.minestom.server.entity"><code>Player</code></a> shift click in the inventory</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#UNSAFE_itemInsert(int,net.minestom.server.item.ItemStack)">UNSAFE_itemInsert</a></span>&#8203;(int&nbsp;slot,
                  @NotNull <a href="../item/ItemStack.html" title="class in net.minestom.server.item">ItemStack</a>&nbsp;itemStack)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#update()">update</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Refreshes the inventory for all viewers.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#update(net.minestom.server.entity.Player)">update</a></span>&#8203;(@NotNull <a href="../entity/Player.html" title="class in net.minestom.server.entity">Player</a>&nbsp;player)</code></th>
 <td class="colLast">
@@ -638,6 +645,21 @@ public&nbsp;@NotNull <a href="https://docs.oracle.com/en/java/javase/11/docs/api
 <dd><code>player</code> - the viewer to remove</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if the player has successfully been removed</dd>
+</dl>
+</li>
+</ul>
+<a id="onClosed(net.minestom.server.entity.Player)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>onClosed</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;onClosed&#8203;(@NotNull
+                     @NotNull <a href="../entity/Player.html" title="class in net.minestom.server.entity">Player</a>&nbsp;player)</pre>
+<div class="block">Called when the inventory is closed via <a href="../entity/Player.html#closeInventory()"><code>Player.closeInventory()</code></a>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>player</code> - The player</dd>
 </dl>
 </li>
 </ul>
