@@ -1,5 +1,6 @@
 package net.minestom.server.inventory;
 
+import net.minestom.server.event.ClassListener;
 import net.minestom.server.inventory.click.InventoryClickProcessor;
 import net.minestom.server.inventory.condition.InventoryCondition;
 import net.minestom.server.item.ItemStack;
@@ -22,7 +23,7 @@ import java.util.function.UnaryOperator;
  * Represents an inventory where items can be modified/retrieved.
  */
 @ApiStatus.NonExtendable
-public abstract class AbstractInventory implements InventoryClickHandler, TagHandler {
+public abstract class AbstractInventory implements InventoryClickHandler, TagHandler, ClassListener {
 
     private final int size;
     protected final ItemStack[] itemStacks;

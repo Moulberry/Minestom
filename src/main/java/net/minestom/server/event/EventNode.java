@@ -8,8 +8,10 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.BitSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -134,6 +136,27 @@ public interface EventNode<T extends Event> {
                                                             @NotNull EventFilter<E, V> filter,
                                                             @NotNull Predicate<V> predicate) {
         return create(name, filter, (e, h) -> predicate.test(h));
+    }
+
+    /**
+     * TODO: Make javadoc
+     *
+     * Creates an event node which accepts any event of the given type which has a handler who
+     * has the given bit.
+     * <p>
+     * The {@link EventFilter}'s resulting event type must be {@link ClassListener}.
+     *
+     * @param name   The name of the event node
+     * @param filter The event type filter to apply
+     * @param bit   The uuid which must be contained on the event handler
+     * @param <E>    The resulting event type of the node
+     * @return A node with an event type filter as well as a handler with the provided UUID
+     */
+    @Contract(value = "_, _, _ -> new", pure = true)
+    static <E extends Event> @NotNull EventNode<E> bit(@NotNull String name,
+                                                       @NotNull EventFilter<E, ? extends ClassListener> filter,
+                                                       int bit) {
+        return create(name, filter, (e, h) -> h.hasClassListenerID(bit));
     }
 
     /**
