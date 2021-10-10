@@ -672,6 +672,7 @@ public final class MinecraftServer {
         LOGGER.info("Starting Minestom server.");
 
         updateManager.start();
+        tagManager.start();
 
         // Init server
         try {

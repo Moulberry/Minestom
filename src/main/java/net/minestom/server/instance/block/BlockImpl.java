@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.minestom.server.gamedata.tags.TagContainer;
 import net.minestom.server.registry.Registry;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.utils.block.BlockUtils;
@@ -69,6 +70,7 @@ final class BlockImpl implements Block {
     private final NBTCompound nbt;
     private final BlockHandler handler;
 
+    private TagContainer minecraftTags; // Cache
     private int hashCode; // Cache
 
     BlockImpl(@NotNull Registry.BlockEntry registry,
@@ -81,6 +83,14 @@ final class BlockImpl implements Block {
         this.properties = properties;
         this.nbt = nbt;
         this.handler = handler;
+    }
+
+    @Override
+    public TagContainer getMinecraftTags() {
+        if (minecraftTags == null) {
+            minecraftTags = TagContainer.byID(net.minestom.server.gamedata.tags.Tag.BasicType.BLOCKS, registry.namespace());
+        }
+        return minecraftTags;
     }
 
     @Override

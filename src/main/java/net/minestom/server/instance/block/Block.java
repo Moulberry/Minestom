@@ -1,5 +1,6 @@
 package net.minestom.server.instance.block;
 
+import net.minestom.server.gamedata.tags.TagContainer;
 import net.minestom.server.registry.ProtocolObject;
 import net.minestom.server.registry.Registry;
 import net.minestom.server.tag.Tag;
@@ -21,6 +22,8 @@ import java.util.function.BiPredicate;
  */
 @ApiStatus.NonExtendable
 public interface Block extends ProtocolObject, TagReadable, Blocks {
+
+    TagContainer getMinecraftTags();
 
     /**
      * Creates a new block with the the property {@code property} sets to {@code value}.
