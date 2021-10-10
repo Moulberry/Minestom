@@ -26,6 +26,13 @@ public final class PlacementRules {
     // Bells
     // Banners (int rot)
     // Signs (int rot)
+    // Doors (place upper door)
+    // Sunflower (place upper sunflower)
+    // Fern (place upper fern)
+    // Beds (place 2nd block)
+    // Turtle eggs (stacking)
+    // Snow layer combination
+    // Tripwire
 
     /* Filters */
 
