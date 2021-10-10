@@ -31,6 +31,15 @@ public class BlockPlaceMechanicWallReplacement {
         WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:player_head"), Block.PLAYER_WALL_HEAD);
         WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:creeper_head"), Block.CREEPER_WALL_HEAD);
         WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:dragon_head"), Block.DRAGON_WALL_HEAD);
+
+        WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:acacia_sign"), Block.ACACIA_WALL_SIGN);
+        WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:warped_sign"), Block.WARPED_WALL_SIGN);
+        WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:birch_sign"), Block.BIRCH_WALL_SIGN);
+        WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:oak_sign"), Block.OAK_WALL_SIGN);
+        WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:crimson_sign"), Block.CRIMSON_WALL_SIGN);
+        WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:dark_oak_sign"), Block.DARK_OAK_WALL_SIGN);
+        WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:jungle_sign"), Block.JUNGLE_WALL_SIGN);
+        WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:spruce_sign"), Block.SPRUCE_WALL_SIGN);
     }
 
     public static boolean shouldReplace(Block block) {

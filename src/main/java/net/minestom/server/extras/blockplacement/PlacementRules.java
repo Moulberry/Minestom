@@ -14,11 +14,18 @@ import java.util.Set;
 
 public final class PlacementRules {
 
-    /* Data Definition (Note: Initialized at end of file) */
-
-    private static Set<NamespaceID> ROTATION_INVERT;
-    private static Set<NamespaceID> USE_BLOCK_FACING;
-    private static final Set<Integer> ROTATION_VERTICAL = new HashSet<>();
+    //TODO:
+    // Twisting Vines
+    // Weeping Vines
+    // Anvils (flip X/Z rotation)
+    // Small Dripleaf (convert Y)
+    // Big Dripleaf (convert Y)
+    // Candles (stacking)
+    // Non-collding blocks to place inside player
+    // Waterlogged state
+    // Bells
+    // Banners (int rot)
+    // Signs (int rot)
 
     /* Filters */
 
@@ -34,6 +41,10 @@ public final class PlacementRules {
 
     private static final EventBinding<BlockEvent> SLAB_BINDING = EventBinding.filtered(EventFilter.BLOCK, PlacementRules::isSlab)
             .map(PlayerBlockPlaceEvent.class, BlockPlaceMechanicSlab::onPlace)
+            .build();
+
+    private static final EventBinding<BlockEvent> BUTTON_BINDING = EventBinding.filtered(EventFilter.BLOCK, PlacementRules::isButton)
+            .map(PlayerBlockPlaceEvent.class, BlockPlaceMechanicButton::onPlace)
             .build();
 
     private static final EventBinding<BlockEvent> CHEST_BINDING = EventBinding.filtered(EventFilter.BLOCK, PlacementRules::isChest)
@@ -59,17 +70,8 @@ public final class PlacementRules {
             .map(PlayerBlockPlaceEvent.class, BlockPlaceMechanicVine::onPlace)
             .build();
 
-    private static final EventBinding<BlockEvent> LEVER_BINDING = EventBinding.filtered(EventFilter.BLOCK, PlacementRules::isLever)
-            .map(PlayerBlockPlaceEvent.class, BlockPlaceMechanicLever::onPlace)
-            .build();
-
     private static final EventBinding<BlockEvent> ROTATION_BINDING = EventBinding.filtered(EventFilter.BLOCK, PlacementRules::hasRotation)
-            .map(PlayerBlockPlaceEvent.class, (block, event) -> {
-                BlockPlaceMechanicRotation.onPlace(block, event,
-                        !ROTATION_VERTICAL.contains(event.getBlock().id()),
-                        !USE_BLOCK_FACING.contains(event.getBlock().namespace()),
-                        ROTATION_INVERT.contains(event.getBlock().namespace()));
-            })
+            .map(PlayerBlockPlaceEvent.class, BlockPlaceMechanicRotation::onPlace)
             .build();
 
     private static final EventBinding<BlockEvent> AXIS_BINDING = EventBinding.filtered(EventFilter.BLOCK, PlacementRules::hasAxis)
@@ -100,6 +102,11 @@ public final class PlacementRules {
     private static final NamespaceID MINECRAFT_SLABS = NamespaceID.from("minecraft:slabs");
     private static boolean isSlab(Block block) {
         return block.getMinecraftTags().contains(MINECRAFT_SLABS);
+    }
+
+    private static final NamespaceID MINECRAFT_BUTTONS = NamespaceID.from("minecraft:buttons");
+    private static boolean isButton(Block block) {
+        return block.getMinecraftTags().contains(MINECRAFT_BUTTONS) || block.compare(Block.LEVER);
     }
 
     private static boolean isChest(Block block) {
@@ -154,74 +161,19 @@ public final class PlacementRules {
         MinecraftServer.getGlobalEventHandler().register(STAIRS_BINDING);
         MinecraftServer.getGlobalEventHandler().register(WALLS_BINDING);
         MinecraftServer.getGlobalEventHandler().register(SLAB_BINDING);
+        MinecraftServer.getGlobalEventHandler().register(BUTTON_BINDING);
         MinecraftServer.getGlobalEventHandler().register(CHEST_BINDING);
         MinecraftServer.getGlobalEventHandler().register(FENCE_BINDING);
         MinecraftServer.getGlobalEventHandler().register(GLOW_LICHEN_BINDING);
         MinecraftServer.getGlobalEventHandler().register(VINE_BINDING);
-        MinecraftServer.getGlobalEventHandler().register(LEVER_BINDING);
         MinecraftServer.getGlobalEventHandler().register(POINTED_DRIPSTONE_BINDING);
 
         for(short stateId=0; stateId<32767; stateId++) {
             Block block = Block.fromStateId(stateId);
             if(block == null) continue;
 
-            if(block.getProperty("facing") != null) {
-                for(String direction : block.properties().values()) {
-                    if(direction.equals("up") || direction.equals("down")) {
-                        ROTATION_VERTICAL.add(block.id());
-                    }
-                }
-            }
-
-            if(block.getMinecraftTags().contains(NamespaceID.from("minecraft:wall_signs"))) {
-                USE_BLOCK_FACING.add(block.namespace());
-            }
+            BlockPlaceMechanicRotation.updateDataFromBlock(block);
         }
 	}
-
-    /* Data */
-
-    static {
-        ROTATION_INVERT = Set.of(
-                NamespaceID.from("minecraft:barrel"),
-                NamespaceID.from("minecraft:command_block"),
-                NamespaceID.from("minecraft:repeating_command_block"),
-                NamespaceID.from("minecraft:chain_command_block"),
-                NamespaceID.from("minecraft:dispenser"),
-                NamespaceID.from("minecraft:dropper"),
-                NamespaceID.from("minecraft:chest"),
-                NamespaceID.from("minecraft:trapped_chest"),
-                NamespaceID.from("minecraft:observer"),
-                NamespaceID.from("minecraft:beehive"),
-                NamespaceID.from("minecraft:bee_nest"),
-                NamespaceID.from("minecraft:piston")
-        );
-        USE_BLOCK_FACING = new HashSet<>(Set.of(
-                NamespaceID.from("minecraft:glow_lichen"),
-                NamespaceID.from("minecraft:cocoa"),
-                NamespaceID.from("minecraft:dead_tube_coral_wall_fan"),
-                NamespaceID.from("minecraft:dead_brain_coral_wall_fan"),
-                NamespaceID.from("minecraft:dead_bubble_coral_wall_fan"),
-                NamespaceID.from("minecraft:dead_fire_coral_wall_fan"),
-                NamespaceID.from("minecraft:dead_horn_coral_wall_fan"),
-                NamespaceID.from("minecraft:tube_coral_wall_fan"),
-                NamespaceID.from("minecraft:brain_coral_wall_fan"),
-                NamespaceID.from("minecraft:bubble_coral_wall_fan"),
-                NamespaceID.from("minecraft:fire_coral_wall_fan"),
-                NamespaceID.from("minecraft:horn_coral_wall_fan"),
-                NamespaceID.from("minecraft:ladder"),
-                NamespaceID.from("minecraft:tripwire_hook"),
-                NamespaceID.from("minecraft:vine"),
-                NamespaceID.from("minecraft:wall_torch"),
-                NamespaceID.from("minecraft:redstone_wall_torch"),
-                NamespaceID.from("minecraft:soul_wall_torch"),
-                NamespaceID.from("minecraft:skeleton_wall_skull"),
-                NamespaceID.from("minecraft:wither_skeleton_wall_skull"),
-                NamespaceID.from("minecraft:zombie_wall_head"),
-                NamespaceID.from("minecraft:player_wall_head"),
-                NamespaceID.from("minecraft:creeper_wall_head"),
-                NamespaceID.from("minecraft:dragon_wall_head")
-        ));
-    }
 
 }

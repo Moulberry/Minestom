@@ -8,7 +8,7 @@ import net.minestom.server.instance.block.BlockFace;
 /**
  * Block mechanic for levers
  */
-public class BlockPlaceMechanicLever {
+public class BlockPlaceMechanicButton {
 
     public static void onPlace(Block block, PlayerBlockPlaceEvent event) {
         BlockFace face = event.getBlockFace();
@@ -18,7 +18,7 @@ public class BlockPlaceMechanicLever {
         } else if(face == BlockFace.TOP) {
             block = block.withProperty("face", "floor");
         } else {
-            block = block.withProperty("wall", "ceiling");
+            block = block.withProperty("face", "wall");
             block = block.withProperty("facing", face.name().toLowerCase());
             event.setBlock(block);
             return;

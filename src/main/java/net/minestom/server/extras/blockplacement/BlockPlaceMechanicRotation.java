@@ -4,14 +4,32 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.event.player.PlayerBlockPlaceEvent;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
+import net.minestom.server.utils.NamespaceID;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class BlockPlaceMechanicRotation {
 
-    public static void onPlace(Block block, PlayerBlockPlaceEvent event, boolean horizontalOnly, boolean usePlayerFacing, boolean invert) {
+    public static void updateDataFromBlock(Block block) {
+        String facing = block.getProperty("facing");
+        if(facing != null) {
+            if(facing.equals("up") || facing.equals("down")) {
+                ROTATION_VERTICAL.add(block.id());
+            }
+        }
+
+        if(block.getMinecraftTags().contains(NamespaceID.from("minecraft:wall_signs"))) {
+            USE_BLOCK_FACING.add(block.namespace());
+        }
+    }
+
+    public static void onPlace(Block block, PlayerBlockPlaceEvent event) {
         block = event.getBlock();
 
-        // Invert invert for block-face-placements
-        invert = invert == usePlayerFacing;
+        boolean horizontalOnly = !ROTATION_VERTICAL.contains(event.getBlock().id());
+        boolean usePlayerFacing = !USE_BLOCK_FACING.contains(event.getBlock().namespace());
+        boolean invert = ROTATION_INVERT.contains(event.getBlock().namespace());
 
         Vec playerDir = event.getPlayer().getPosition().direction();
 
@@ -42,7 +60,7 @@ public class BlockPlaceMechanicRotation {
         } else {
             BlockFace face = event.getBlockFace();
 
-            if(!invert) {
+            if(invert) {
                 face = face.getOppositeFace();
             }
 
@@ -73,5 +91,49 @@ public class BlockPlaceMechanicRotation {
 
         event.setBlock(block);
     }
+
+    private static final Set<Integer> ROTATION_VERTICAL = new HashSet<>();
+    private static Set<NamespaceID> ROTATION_INVERT = Set.of(
+            NamespaceID.from("minecraft:barrel"),
+            NamespaceID.from("minecraft:command_block"),
+            NamespaceID.from("minecraft:repeating_command_block"),
+            NamespaceID.from("minecraft:chain_command_block"),
+            NamespaceID.from("minecraft:dispenser"),
+            NamespaceID.from("minecraft:dropper"),
+            NamespaceID.from("minecraft:chest"),
+            NamespaceID.from("minecraft:trapped_chest"),
+            NamespaceID.from("minecraft:observer"),
+            NamespaceID.from("minecraft:beehive"),
+            NamespaceID.from("minecraft:bee_nest"),
+            NamespaceID.from("minecraft:piston")
+    );
+    private static Set<NamespaceID> USE_BLOCK_FACING = new HashSet<>(Set.of(
+            NamespaceID.from("minecraft:glow_lichen"),
+            NamespaceID.from("minecraft:cocoa"),
+            NamespaceID.from("minecraft:dead_tube_coral_wall_fan"),
+            NamespaceID.from("minecraft:dead_brain_coral_wall_fan"),
+            NamespaceID.from("minecraft:dead_bubble_coral_wall_fan"),
+            NamespaceID.from("minecraft:dead_fire_coral_wall_fan"),
+            NamespaceID.from("minecraft:dead_horn_coral_wall_fan"),
+            NamespaceID.from("minecraft:tube_coral_wall_fan"),
+            NamespaceID.from("minecraft:brain_coral_wall_fan"),
+            NamespaceID.from("minecraft:bubble_coral_wall_fan"),
+            NamespaceID.from("minecraft:fire_coral_wall_fan"),
+            NamespaceID.from("minecraft:horn_coral_wall_fan"),
+            NamespaceID.from("minecraft:ladder"),
+            NamespaceID.from("minecraft:tripwire_hook"),
+            NamespaceID.from("minecraft:vine"),
+            NamespaceID.from("minecraft:wall_torch"),
+            NamespaceID.from("minecraft:lightning_rod"),
+            NamespaceID.from("minecraft:end_rod"),
+            NamespaceID.from("minecraft:redstone_wall_torch"),
+            NamespaceID.from("minecraft:soul_wall_torch"),
+            NamespaceID.from("minecraft:skeleton_wall_skull"),
+            NamespaceID.from("minecraft:wither_skeleton_wall_skull"),
+            NamespaceID.from("minecraft:zombie_wall_head"),
+            NamespaceID.from("minecraft:player_wall_head"),
+            NamespaceID.from("minecraft:creeper_wall_head"),
+            NamespaceID.from("minecraft:dragon_wall_head")
+    ));
 
 }
