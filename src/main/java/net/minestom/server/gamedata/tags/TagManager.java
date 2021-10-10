@@ -16,7 +16,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class TagManager {
     private Map<Tag.BasicType, List<Tag>> tagMap = new ConcurrentHashMap<>();
-    private boolean started = false; // Tags can only be modified before the server starts
 
     public TagManager() {
         // Load required tags from files
@@ -26,6 +25,11 @@ public final class TagManager {
             json.keySet().forEach(tagName -> {
                 final var tag = new Tag(NamespaceID.from(tagName), getValues(json, tagName));
                 tagIdentifierMap.add(tag);
+
+                // Insert the tags into a TagContainer, allowing name lookups by value
+                for(NamespaceID value : tag.getValues()) {
+                    TagContainer.byID(type, value).add(tag.getName());
+                }
             });
         }
     }
@@ -39,40 +43,8 @@ public final class TagManager {
         return null;
     }
 
-    public void setTag(Tag.BasicType type, NamespaceID name, NamespaceID... values) {
-        Check.stateCondition(started, "The server is already started. Tags cannot be edited.");
-
-        Set<NamespaceID> namespaceValues = new HashSet<>(Arrays.asList(values));
-
-        final var tag = new Tag(name, namespaceValues);
-        final var tagIdentifierMap = tagMap.computeIfAbsent(type, s -> new CopyOnWriteArrayList<>());
-
-        // Remove old tag
-        tagIdentifierMap.removeIf((tagInMap) -> tagInMap.getName().equals(name));
-
-        // Add new tag
-        tagIdentifierMap.add(tag);
-    }
-
-    public void start() {
-        Check.stateCondition(started, "The server is already started");
-        started = true;
-
-        // Make tagMap unmodifiable
-        tagMap = Collections.unmodifiableMap(tagMap);
-
-        // Insert the tags into a TagContainer, allowing name lookups by value
-        for (Map.Entry<Tag.BasicType, List<Tag>> entry : tagMap.entrySet()) {
-            for(Tag tag : entry.getValue()) {
-                for(NamespaceID value : tag.getValues()) {
-                    TagContainer.byID(entry.getKey(), value).add(tag.getName());
-                }
-            }
-        }
-    }
-
     public Map<Tag.BasicType, List<Tag>> getTagMap() {
-        return tagMap;
+        return Collections.unmodifiableMap(tagMap);
     }
 
     private Set<NamespaceID> getValues(JsonObject main, String value) {

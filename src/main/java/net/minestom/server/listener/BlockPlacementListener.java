@@ -2,6 +2,7 @@ package net.minestom.server.listener;
 
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
+import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
@@ -10,6 +11,7 @@ import net.minestom.server.entity.metadata.other.ArmorStandMeta;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.player.PlayerBlockInteractEvent;
 import net.minestom.server.event.player.PlayerBlockPlaceEvent;
+import net.minestom.server.event.player.PlayerBlockUpdateNeighborEvent;
 import net.minestom.server.event.player.PlayerUseItemOnBlockEvent;
 import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.Instance;
@@ -27,10 +29,15 @@ import net.minestom.server.utils.Direction;
 import net.minestom.server.utils.chunk.ChunkUtils;
 import net.minestom.server.utils.validate.Check;
 
+import java.util.HashSet;
 import java.util.Set;
 
 public class BlockPlacementListener {
     private static final BlockManager BLOCK_MANAGER = MinecraftServer.getBlockManager();
+    public static final int MAX_NEIGHBOR_UPDATE_LENGTH = 4;
+    public static final Vec[] DIRS = { new Vec(1, 0, 0), new Vec(-1, 0, 0),
+            new Vec(0, 1, 0), new Vec(0, -1, 0),
+            new Vec(0, 0, 1), new Vec(0, 0, -1)};
 
     public static void listener(ClientPlayerBlockPlacementPacket packet, Player player) {
         final PlayerInventory playerInventory = player.getInventory();
@@ -137,7 +144,8 @@ public class BlockPlacementListener {
             return;
         }
         // BlockPlaceEvent check
-        PlayerBlockPlaceEvent playerBlockPlaceEvent = new PlayerBlockPlaceEvent(player, placedBlock, blockFace, placementPosition, packet.hand);
+        PlayerBlockPlaceEvent playerBlockPlaceEvent = new PlayerBlockPlaceEvent(player, placedBlock, blockFace, placementPosition,
+                new Vec(packet.cursorPositionX, packet.cursorPositionY, packet.cursorPositionZ), packet.hand);
         playerBlockPlaceEvent.consumeBlock(player.getGameMode() != GameMode.CREATIVE);
         EventDispatcher.call(playerBlockPlaceEvent);
         if (playerBlockPlaceEvent.isCancelled()) {
@@ -165,6 +173,47 @@ public class BlockPlacementListener {
             final ItemStack newUsedItem = usedItem.getStackingRule().apply(usedItem, usedItem.getAmount() - 1);
             playerInventory.setItemInHand(hand, newUsedItem);
         }
+
+        // Update neighbors
+        Set<Point> updatedNeighbors = new HashSet<>();
+        Set<Point> toUpdate = new HashSet<>();
+
+        toUpdate.add(placementPosition);
+        updatedNeighbors.add(placementPosition); //Don't update the block we just placed
+
+        final Vec[] DIRS = { new Vec(1, 0, 0), new Vec(-1, 0, 0),
+                            new Vec(0, 1, 0), new Vec(0, -1, 0),
+                            new Vec(0, 0, 1), new Vec(0, 0, -1)};
+
+        for(int i=0; i<MAX_NEIGHBOR_UPDATE_LENGTH; i++) {
+            Set<Point> toUpdateCopy = new HashSet<>(toUpdate);
+            toUpdate.clear();
+
+            for(Point pos : toUpdateCopy) {
+                for(Vec dir : DIRS) {
+                    Point position = pos.add(dir);
+
+                    if(updatedNeighbors.contains(position)) continue;
+                    updatedNeighbors.add(position);
+
+                    Block block = instance.getBlock(position);
+
+                    if(block.isAir()) continue;
+
+                    PlayerBlockUpdateNeighborEvent playerBlockUpdateNeighborEvent = new PlayerBlockUpdateNeighborEvent(player, block, position);
+                    EventDispatcher.call(playerBlockUpdateNeighborEvent);
+
+                    if (playerBlockUpdateNeighborEvent.getBlock() != block) {
+                        instance.setBlock(position, playerBlockUpdateNeighborEvent.getBlock());
+                    }
+
+                    if (playerBlockUpdateNeighborEvent.isShouldUpdateNeighbors()) {
+                        toUpdate.add(position);
+                    }
+                }
+            }
+        }
+
     }
 
     private static void refresh(Player player, Chunk chunk) {
