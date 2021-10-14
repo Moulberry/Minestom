@@ -94,10 +94,15 @@ public class BlockPlacementListener {
             canPlaceBlock = usedItem.getMeta().getCanPlaceOn().contains(interactedBlock);
         }
 
-        // Get the newly placed block position
-        final int offsetX = blockFace == BlockFace.WEST ? -1 : blockFace == BlockFace.EAST ? 1 : 0;
-        final int offsetY = blockFace == BlockFace.BOTTOM ? -1 : blockFace == BlockFace.TOP ? 1 : 0;
-        final int offsetZ = blockFace == BlockFace.NORTH ? -1 : blockFace == BlockFace.SOUTH ? 1 : 0;
+        // If the block is air, don't offset in order to mimic vanilla's "replace" function
+        // when players break and replace blocks during the same tick
+        int offsetX = 0, offsetY = 0, offsetZ = 0;
+        if(!instance.getBlock(blockPosition).isAir()) {
+            // Get the newly placed block position
+            offsetX = blockFace == BlockFace.WEST ? -1 : blockFace == BlockFace.EAST ? 1 : 0;
+            offsetY = blockFace == BlockFace.BOTTOM ? -1 : blockFace == BlockFace.TOP ? 1 : 0;
+            offsetZ = blockFace == BlockFace.NORTH ? -1 : blockFace == BlockFace.SOUTH ? 1 : 0;
+        }
         final Point placementPosition = blockPosition.add(offsetX, offsetY, offsetZ);
 
         if (!canPlaceBlock) {
@@ -165,8 +170,11 @@ public class BlockPlacementListener {
             return;
         }
         // Place the block
-        instance.placeBlock(new BlockHandler.PlayerPlacement(resultBlock, instance, placementPosition, player, hand, blockFace,
-                packet.cursorPositionX, packet.cursorPositionY, packet.cursorPositionZ));
+        if (!instance.placeBlock(new BlockHandler.PlayerPlacement(resultBlock, instance, placementPosition, player, hand, blockFace,
+                packet.cursorPositionX, packet.cursorPositionY, packet.cursorPositionZ))) {
+            refresh(player, chunk);
+            return;
+        }
         // Block consuming
         if (playerBlockPlaceEvent.doesConsumeBlock()) {
             // Consume the block in the player's hand
