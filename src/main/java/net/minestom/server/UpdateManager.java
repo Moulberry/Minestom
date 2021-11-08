@@ -176,6 +176,7 @@ public final class UpdateManager {
 
                     // Waiting players update (newly connected clients waiting to get into the server)
                     connectionManager.updateWaitingPlayers();
+                    connectionManager.updateWaitingLogins();
 
                     // Keep Alive Handling
                     connectionManager.handleKeepAlive(tickStart);

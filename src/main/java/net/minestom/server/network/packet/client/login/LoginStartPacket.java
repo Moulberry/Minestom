@@ -8,6 +8,7 @@ import net.minestom.server.extras.MojangAuth;
 import net.minestom.server.extras.bungee.BungeeCordProxy;
 import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.network.ConnectionState;
+import net.minestom.server.network.LoginPluginProcessor;
 import net.minestom.server.network.packet.client.ClientPreplayPacket;
 import net.minestom.server.network.packet.server.login.EncryptionRequestPacket;
 import net.minestom.server.network.packet.server.login.LoginDisconnectPacket;
@@ -18,6 +19,10 @@ import net.minestom.server.utils.binary.BinaryReader;
 import net.minestom.server.utils.binary.BinaryWriter;
 import org.jetbrains.annotations.NotNull;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -44,18 +49,35 @@ public class LoginStartPacket implements ClientPreplayPacket {
         // Proxy support (only for socket clients)
         if (isSocketConnection) {
             final PlayerSocketConnection socketConnection = (PlayerSocketConnection) connection;
+
+            Map<LoginPluginProcessor.LoginPluginRequest, LoginPluginProcessor.LoginPluginHandler> handlerMap =
+                    new HashMap<>();
+
             // Velocity support
             if (VelocityProxy.isEnabled()) {
-                final int messageId = ThreadLocalRandom.current().nextInt();
-                final String channel = VelocityProxy.PLAYER_INFO_CHANNEL;
-                // Important in order to retrieve the channel in the response packet
-                socketConnection.addPluginRequestEntry(messageId, channel);
+                // This would be updated in an event
+                handlerMap.put(new LoginPluginProcessor.LoginPluginRequest(VelocityProxy.PLAYER_INFO_CHANNEL,
+                        null), (packet, data) -> {
+                    if (packet.data != null && packet.data.length > 0) {
+                        BinaryReader reader = new BinaryReader(packet.data);
+                        if (VelocityProxy.checkIntegrity(reader)) {
+                            // Get the real connection address
+                            final InetAddress address = VelocityProxy.readAddress(reader);
+                            final int port = ((java.net.InetSocketAddress) connection.getRemoteAddress()).getPort();
+                            data.socketAddress = new InetSocketAddress(address, port);
 
-                LoginPluginRequestPacket loginPluginRequestPacket = new LoginPluginRequestPacket();
-                loginPluginRequestPacket.messageId = messageId;
-                loginPluginRequestPacket.channel = channel;
-                loginPluginRequestPacket.data = null;
-                connection.sendPacket(loginPluginRequestPacket);
+                            data.playerUuid = reader.readUuid();
+                            data.playerUsername = reader.readSizedString(16);
+
+                            data.playerSkin = VelocityProxy.readSkin(reader);
+                        }
+                    }
+                });
+            }
+
+            if (!handlerMap.isEmpty()) {
+                socketConnection.setLoginPluginProcessor(LoginPluginProcessor.create(socketConnection, handlerMap));
+                CONNECTION_MANAGER.registerWaitingLogin(socketConnection);
                 return;
             }
         }

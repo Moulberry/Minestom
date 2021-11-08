@@ -40,6 +40,7 @@ public final class ConnectionManager {
     private static final Component TIMEOUT_TEXT = Component.text("Timeout", NamedTextColor.RED);
 
     private final Queue<Player> waitingPlayers = new ConcurrentLinkedQueue<>();
+    private final Queue<PlayerConnection> waitingLogins = new ConcurrentLinkedQueue<>();
     private final Set<Player> players = new CopyOnWriteArraySet<>();
     private final Set<Player> unmodifiablePlayers = Collections.unmodifiableSet(players);
     private final Map<PlayerConnection, Player> connectionPlayerMap = new ConcurrentHashMap<>();
@@ -367,6 +368,26 @@ public final class ConnectionManager {
             // Spawn the player at Player#getRespawnPoint
             waitingPlayer.UNSAFE_init(spawningInstance);
         }
+    }
+
+    public void updateWaitingLogins() {
+        //waitingLogins.retainAll(connectionPlayerMap.keySet());
+
+        PlayerConnection playerConnection;
+        while ((playerConnection = waitingLogins.peek()) != null) { // Can the head of the queue change between peek and poll?
+            if (playerConnection instanceof PlayerSocketConnection playerSocketConnection) {
+                LoginPluginProcessor processor = playerSocketConnection.getLoginPluginProcessor();
+                if (processor == null || processor.checkFinished()) {
+                    waitingLogins.poll();
+                }
+            } else {
+                waitingLogins.poll();
+            }
+        }
+    }
+
+    public void registerWaitingLogin(PlayerSocketConnection player) {
+        waitingLogins.add(player);
     }
 
     /**

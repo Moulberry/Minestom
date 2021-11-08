@@ -7,6 +7,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.entity.PlayerSkin;
 import net.minestom.server.extras.mojangAuth.MojangCrypt;
 import net.minestom.server.network.ConnectionState;
+import net.minestom.server.network.LoginPluginProcessor;
 import net.minestom.server.network.PacketProcessor;
 import net.minestom.server.network.packet.FramedPacket;
 import net.minestom.server.network.packet.server.ComponentHoldingServerPacket;
@@ -34,7 +35,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -66,9 +66,7 @@ public class PlayerSocketConnection extends PlayerConnection {
     private int serverPort;
     private int protocolVersion;
 
-    // Used for the login plugin request packet, to retrieve the channel from a message id,
-    // cleared once the player enters the play state
-    private final Map<Integer, String> pluginRequestMap = new ConcurrentHashMap<>();
+    private @Nullable LoginPluginProcessor loginPluginProcessor = null;
 
     // Bungee
     private UUID bungeeUuid;
@@ -429,33 +427,12 @@ public class PlayerSocketConnection extends PlayerConnection {
         this.bungeeSkin = bungeeSkin;
     }
 
-    /**
-     * Adds an entry to the plugin request map.
-     * <p>
-     * Only working if {@link #getConnectionState()} is {@link net.minestom.server.network.ConnectionState#LOGIN}.
-     *
-     * @param messageId the message id
-     * @param channel   the packet channel
-     * @throws IllegalStateException if a messageId with the value {@code messageId} already exists for this connection
-     */
-    public void addPluginRequestEntry(int messageId, @NotNull String channel) {
-        if (!getConnectionState().equals(ConnectionState.LOGIN)) {
-            return;
-        }
-        Check.stateCondition(pluginRequestMap.containsKey(messageId), "You cannot have two messageId with the same value");
-        this.pluginRequestMap.put(messageId, channel);
+    public LoginPluginProcessor getLoginPluginProcessor() {
+        return loginPluginProcessor;
     }
 
-    /**
-     * Gets a request channel from a message id, previously cached using {@link #addPluginRequestEntry(int, String)}.
-     * <p>
-     * Be aware that the internal map is cleared once the player enters the play state.
-     *
-     * @param messageId the message id
-     * @return the channel linked to the message id, null if not found
-     */
-    public @Nullable String getPluginRequestChannel(int messageId) {
-        return pluginRequestMap.get(messageId);
+    public void setLoginPluginProcessor(LoginPluginProcessor loginPluginProcessor) {
+        this.loginPluginProcessor = loginPluginProcessor;
     }
 
     @Override
@@ -463,7 +440,7 @@ public class PlayerSocketConnection extends PlayerConnection {
         super.setConnectionState(connectionState);
         // Clear the plugin request map (since it is not used anymore)
         if (connectionState.equals(ConnectionState.PLAY)) {
-            this.pluginRequestMap.clear();
+            this.loginPluginProcessor = null;
         }
     }
 

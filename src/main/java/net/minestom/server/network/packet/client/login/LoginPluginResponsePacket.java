@@ -7,6 +7,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.entity.PlayerSkin;
 import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.network.ConnectionManager;
+import net.minestom.server.network.LoginPluginProcessor;
 import net.minestom.server.network.packet.client.ClientPreplayPacket;
 import net.minestom.server.network.packet.server.login.LoginDisconnectPacket;
 import net.minestom.server.network.player.PlayerConnection;
@@ -31,7 +32,15 @@ public class LoginPluginResponsePacket implements ClientPreplayPacket {
     @Override
     public void process(@NotNull PlayerConnection connection) {
         // Proxy support
+
         if (connection instanceof PlayerSocketConnection socketConnection) {
+            LoginPluginProcessor processor = socketConnection.getLoginPluginProcessor();
+            if (processor != null) {
+                processor.process(this);
+            }
+        }
+
+        /*if (connection instanceof PlayerSocketConnection socketConnection) {
             final String channel = socketConnection.getPluginRequestChannel(messageId);
             if (channel != null) {
                 boolean success = false;
@@ -79,7 +88,7 @@ public class LoginPluginResponsePacket implements ClientPreplayPacket {
                     socketConnection.sendPacket(disconnectPacket);
                 }
             }
-        }
+        }*/
     }
 
     @Override
