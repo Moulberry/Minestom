@@ -4,6 +4,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
+import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.server.LoginPluginMessageEvent;
 import net.minestom.server.extras.MojangAuth;
 import net.minestom.server.extras.bungee.BungeeCordProxy;
 import net.minestom.server.extras.velocity.VelocityProxy;
@@ -12,7 +14,6 @@ import net.minestom.server.network.LoginPluginProcessor;
 import net.minestom.server.network.packet.client.ClientPreplayPacket;
 import net.minestom.server.network.packet.server.login.EncryptionRequestPacket;
 import net.minestom.server.network.packet.server.login.LoginDisconnectPacket;
-import net.minestom.server.network.packet.server.login.LoginPluginRequestPacket;
 import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.network.player.PlayerSocketConnection;
 import net.minestom.server.utils.binary.BinaryReader;
@@ -24,7 +25,6 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class LoginStartPacket implements ClientPreplayPacket {
 
@@ -70,10 +70,15 @@ public class LoginStartPacket implements ClientPreplayPacket {
                             data.playerUsername = reader.readSizedString(16);
 
                             data.playerSkin = VelocityProxy.readSkin(reader);
+
+                            data.doCustomAuth = true;
                         }
                     }
                 });
             }
+
+            LoginPluginMessageEvent loginPluginMessageEvent = new LoginPluginMessageEvent(handlerMap);
+            EventDispatcher.call(loginPluginMessageEvent);
 
             if (!handlerMap.isEmpty()) {
                 socketConnection.setLoginPluginProcessor(LoginPluginProcessor.create(socketConnection, handlerMap));

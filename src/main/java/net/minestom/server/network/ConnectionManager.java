@@ -375,6 +375,9 @@ public final class ConnectionManager {
 
         PlayerSocketConnection playerConnection;
         while ((playerConnection = waitingLogins.poll()) != null) {
+            if (!playerConnection.isOnline()) continue;
+            if (playerConnection.getConnectionState() != ConnectionState.LOGIN) continue;
+
             LoginPluginProcessor processor = playerConnection.getLoginPluginProcessor();
             if (processor != null && !processor.checkFinished()) {
                 stillWaitingConnections.add(playerConnection);

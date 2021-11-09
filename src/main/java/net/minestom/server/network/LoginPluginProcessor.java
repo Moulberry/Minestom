@@ -3,19 +3,19 @@ package net.minestom.server.network;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.PlayerSkin;
+import net.minestom.server.extras.MojangAuth;
 import net.minestom.server.extras.bungee.BungeeCordProxy;
 import net.minestom.server.network.packet.client.login.LoginPluginResponsePacket;
+import net.minestom.server.network.packet.server.login.EncryptionRequestPacket;
 import net.minestom.server.network.packet.server.login.LoginPluginRequestPacket;
 import net.minestom.server.network.player.PlayerSocketConnection;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.BiConsumer;
 
 public class LoginPluginProcessor {
 
@@ -62,8 +62,6 @@ public class LoginPluginProcessor {
 
     // Called by ConnectionManager#updateWaitingLogins
     boolean checkFinished() {
-        if(!socketConnection.isOnline()) return true;
-
         if(waitingResponses.isEmpty()) {
             finish();
             return true;
@@ -72,6 +70,14 @@ public class LoginPluginProcessor {
     }
 
     private void finish() {
+        if (!data.doCustomAuth) {
+            if (MojangAuth.isEnabled()) {
+                EncryptionRequestPacket encryptionRequestPacket = new EncryptionRequestPacket(socketConnection);
+                socketConnection.sendPacket(encryptionRequestPacket);
+            }
+            return;
+        }
+
         if (data.socketAddress != null) {
             socketConnection.setRemoteAddress(data.socketAddress);
         }
@@ -98,6 +104,7 @@ public class LoginPluginProcessor {
         public UUID playerUuid = null;
         public String playerUsername = null;
         public PlayerSkin playerSkin = null;
+        public boolean doCustomAuth = false;
     }
 
     public static record LoginPluginRequest(@NotNull String channel, byte[] data) {
