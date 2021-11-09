@@ -72,7 +72,6 @@ public class LoginPluginProcessor {
     }
 
     private void finish() {
-        System.out.println("finished called");
         if (data.socketAddress != null) {
             socketConnection.setRemoteAddress(data.socketAddress);
         }
