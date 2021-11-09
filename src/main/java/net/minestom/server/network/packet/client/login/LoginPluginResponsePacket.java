@@ -39,56 +39,6 @@ public class LoginPluginResponsePacket implements ClientPreplayPacket {
                 processor.process(this);
             }
         }
-
-        /*if (connection instanceof PlayerSocketConnection socketConnection) {
-            final String channel = socketConnection.getPluginRequestChannel(messageId);
-            if (channel != null) {
-                boolean success = false;
-
-                SocketAddress socketAddress = null;
-                UUID playerUuid = null;
-                String playerUsername = null;
-                PlayerSkin playerSkin = null;
-
-                // Velocity
-                if (VelocityProxy.isEnabled() && channel.equals(VelocityProxy.PLAYER_INFO_CHANNEL)) {
-                    if (data != null && data.length > 0) {
-                        BinaryReader reader = new BinaryReader(data);
-                        success = VelocityProxy.checkIntegrity(reader);
-                        if (success) {
-                            // Get the real connection address
-                            final InetAddress address = VelocityProxy.readAddress(reader);
-                            final int port = ((java.net.InetSocketAddress) connection.getRemoteAddress()).getPort();
-                            socketAddress = new InetSocketAddress(address, port);
-
-                            playerUuid = reader.readUuid();
-                            playerUsername = reader.readSizedString(16);
-
-                            playerSkin = VelocityProxy.readSkin(reader);
-                        }
-                    }
-                }
-
-                if (success) {
-                    if (socketAddress != null) {
-                        socketConnection.setRemoteAddress(socketAddress);
-                    }
-                    if (playerUsername != null) {
-                        socketConnection.UNSAFE_setLoginUsername(playerUsername);
-                    }
-
-                    final String username = socketConnection.getLoginUsername();
-                    final UUID uuid = playerUuid != null ?
-                            playerUuid : CONNECTION_MANAGER.getPlayerConnectionUuid(connection, username);
-
-                    Player player = CONNECTION_MANAGER.startPlayState(connection, uuid, username, true);
-                    player.setSkin(playerSkin);
-                } else {
-                    LoginDisconnectPacket disconnectPacket = new LoginDisconnectPacket(INVALID_PROXY_RESPONSE);
-                    socketConnection.sendPacket(disconnectPacket);
-                }
-            }
-        }*/
     }
 
     @Override

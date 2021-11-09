@@ -8,6 +8,7 @@ import net.minestom.server.extras.bungee.BungeeCordProxy;
 import net.minestom.server.network.packet.client.login.LoginPluginResponsePacket;
 import net.minestom.server.network.packet.server.login.EncryptionRequestPacket;
 import net.minestom.server.network.packet.server.login.LoginPluginRequestPacket;
+import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.network.player.PlayerSocketConnection;
 import org.jetbrains.annotations.NotNull;
 
@@ -56,7 +57,7 @@ public class LoginPluginProcessor {
     public void process(LoginPluginResponsePacket responsePacket) {
         LoginPluginHandler handler = waitingResponses.remove(responsePacket.messageId);
         if (handler != null) {
-            handler.handle(responsePacket, data);
+            handler.handle(responsePacket, socketConnection, data);
         }
     }
 
@@ -123,7 +124,7 @@ public class LoginPluginProcessor {
     }
 
     public interface LoginPluginHandler {
-        void handle(LoginPluginResponsePacket packet, LoginPluginData data);
+        void handle(LoginPluginResponsePacket packet, PlayerSocketConnection connection, LoginPluginData loginData);
     }
 
 }

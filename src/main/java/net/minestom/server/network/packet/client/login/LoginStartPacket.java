@@ -57,23 +57,25 @@ public class LoginStartPacket implements ClientPreplayPacket {
             if (VelocityProxy.isEnabled()) {
                 // This would be updated in an event
                 handlerMap.put(new LoginPluginProcessor.LoginPluginRequest(VelocityProxy.PLAYER_INFO_CHANNEL,
-                        null), (packet, data) -> {
+                        null), (packet, playerSocketConnection, loginData) -> {
                     if (packet.data != null && packet.data.length > 0) {
                         BinaryReader reader = new BinaryReader(packet.data);
                         if (VelocityProxy.checkIntegrity(reader)) {
                             // Get the real connection address
                             final InetAddress address = VelocityProxy.readAddress(reader);
                             final int port = ((java.net.InetSocketAddress) connection.getRemoteAddress()).getPort();
-                            data.socketAddress = new InetSocketAddress(address, port);
+                            loginData.socketAddress = new InetSocketAddress(address, port);
 
-                            data.playerUuid = reader.readUuid();
-                            data.playerUsername = reader.readSizedString(16);
+                            loginData.playerUuid = reader.readUuid();
+                            loginData.playerUsername = reader.readSizedString(16);
 
-                            data.playerSkin = VelocityProxy.readSkin(reader);
+                            loginData.playerSkin = VelocityProxy.readSkin(reader);
 
-                            data.doCustomAuth = true;
+                            loginData.doCustomAuth = true;
+                            return;
                         }
                     }
+                    playerSocketConnection.disconnect();
                 });
             }
 
