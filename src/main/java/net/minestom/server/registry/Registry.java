@@ -154,6 +154,7 @@ public final class Registry {
         private final int stateId;
         private final String translationKey;
         private final double hardness;
+	private final int lightEmission;
         private final double explosionResistance;
         private final double friction;
         private final double speedFactor;
@@ -161,6 +162,7 @@ public final class Registry {
         private final boolean air;
         private final boolean solid;
         private final boolean liquid;
+	private final boolean isFullCube;
         private final String blockEntity;
         private final int blockEntityId;
         private final Supplier<Material> materialSupplier;
@@ -172,6 +174,7 @@ public final class Registry {
             this.stateId = getInt("stateId");
             this.translationKey = getString("translationKey");
             this.hardness = getDouble("hardness");
+	    this.lightEmission = getInt("lightEmission", 0);
             this.explosionResistance = getDouble("explosionResistance");
             this.friction = getDouble("friction");
             this.speedFactor = getDouble("speedFactor", 1);
@@ -179,6 +182,7 @@ public final class Registry {
             this.air = getBoolean("air", false);
             this.solid = getBoolean("solid");
             this.liquid = getBoolean("liquid", false);
+	    this.isFullCube = getBoolean("isFullCube", false);
             {
                 Map<String, Object> blockEntity = element("blockEntity");
                 if (blockEntity != null) {
@@ -215,6 +219,10 @@ public final class Registry {
             return hardness;
         }
 
+	public int lightEmission() {
+            return lightEmission;
+	}
+
         public double explosionResistance() {
             return explosionResistance;
         }
@@ -242,6 +250,10 @@ public final class Registry {
         public boolean isLiquid() {
             return liquid;
         }
+
+	public boolean isFullCube() {
+            return isFullCube;
+	}
 
         public boolean isBlockEntity() {
             return blockEntity != null;
