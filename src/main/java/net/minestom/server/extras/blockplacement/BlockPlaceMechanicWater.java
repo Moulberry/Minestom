@@ -24,7 +24,7 @@ class BlockPlaceMechanicWater {
             }
         }
 
-        Direction dir = event.getBlockFace();
+        Direction dir = event.getBlockFace().toDirection();
         Point pos = event.getPosition().add(dir.normalX(), dir.normalY(), dir.normalZ());
         block = event.getInstance().getBlock(pos);
         if (block.isAir()) {

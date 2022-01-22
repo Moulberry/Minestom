@@ -1,7 +1,7 @@
 plugins {
     `java-library`
-    id("minestom.publishing-conventions")
-    id("minestom.native-conventions")
+    //id("minestom.publishing-conventions")
+    //id("minestom.native-conventions")
 }
 
 allprojects {
