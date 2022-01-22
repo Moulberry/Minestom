@@ -1,5 +1,4 @@
 net.minestom.server
-net.minestom.server.acquirable
 net.minestom.server.advancements
 net.minestom.server.advancements.notifications
 net.minestom.server.adventure
@@ -70,8 +69,6 @@ net.minestom.server.extras.optifine
 net.minestom.server.extras.query
 net.minestom.server.extras.query.event
 net.minestom.server.extras.query.response
-net.minestom.server.extras.selfmodification
-net.minestom.server.extras.selfmodification.mixins
 net.minestom.server.extras.velocity
 net.minestom.server.fluid
 net.minestom.server.gamedata.tags
@@ -97,9 +94,7 @@ net.minestom.server.map.framebuffers
 net.minestom.server.message
 net.minestom.server.monitoring
 net.minestom.server.network
-net.minestom.server.network.packet
 net.minestom.server.network.packet.client
-net.minestom.server.network.packet.client.handler
 net.minestom.server.network.packet.client.handshake
 net.minestom.server.network.packet.client.login
 net.minestom.server.network.packet.client.play
@@ -108,6 +103,7 @@ net.minestom.server.network.packet.server
 net.minestom.server.network.packet.server.handshake
 net.minestom.server.network.packet.server.login
 net.minestom.server.network.packet.server.play
+net.minestom.server.network.packet.server.play.data
 net.minestom.server.network.packet.server.status
 net.minestom.server.network.player
 net.minestom.server.network.socket
@@ -127,7 +123,6 @@ net.minestom.server.terminal
 net.minestom.server.thread
 net.minestom.server.timer
 net.minestom.server.utils
-net.minestom.server.utils.advancement
 net.minestom.server.utils.async
 net.minestom.server.utils.binary
 net.minestom.server.utils.block
@@ -138,6 +133,7 @@ net.minestom.server.utils.chunk
 net.minestom.server.utils.clone
 net.minestom.server.utils.debug
 net.minestom.server.utils.entity
+net.minestom.server.utils.function
 net.minestom.server.utils.identity
 net.minestom.server.utils.instance
 net.minestom.server.utils.inventory
@@ -146,7 +142,6 @@ net.minestom.server.utils.math
 net.minestom.server.utils.mojang
 net.minestom.server.utils.player
 net.minestom.server.utils.position
-net.minestom.server.utils.thread
 net.minestom.server.utils.time
 net.minestom.server.utils.url
 net.minestom.server.utils.validate
