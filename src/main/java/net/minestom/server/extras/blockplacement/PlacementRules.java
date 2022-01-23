@@ -376,6 +376,8 @@ public final class PlacementRules {
         eventNode.register(BELL_BINDING);
         eventNode.register(POINTED_DRIPSTONE_BINDING);
         eventNode.register(DOOR_HINGE_BINDING);
+        eventNode.register(CAVE_VINES_BINDING);
+        eventNode.register(KELP_BINDING);
     }
 
 }
