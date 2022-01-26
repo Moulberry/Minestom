@@ -59,7 +59,7 @@ public abstract class Instance implements Block.Getter, Block.Setter, Tickable, 
     private final WorldBorder worldBorder;
 
     // Tick since the creation of the instance
-    private long worldAge;
+    public long worldAge;
 
     // The time of the instance
     private long time;
