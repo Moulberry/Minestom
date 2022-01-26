@@ -2,6 +2,8 @@ package net.minestom.server.instance.block;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import net.minestom.server.registry.Registry;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.utils.ArrayUtils;
@@ -9,46 +11,84 @@ import net.minestom.server.utils.ObjectArray;
 import net.minestom.server.utils.block.BlockUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.jglrxavpok.hephaistos.nbt.mutable.MutableNBTCompound;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 
 record BlockImpl(@NotNull Registry.BlockEntry registry,
-                 @NotNull Map<String, String> properties,
+                 @NotNull int[] propertiesArray,
                  @Nullable NBTCompound nbt,
                  @Nullable BlockHandler handler) implements Block {
     // Block state -> block object
     private static final ObjectArray<Block> BLOCK_STATE_MAP = new ObjectArray<>();
-    // Block id -> Map<Properties, Block>
-    private static final ObjectArray<Map<Map<String, String>, Block>> POSSIBLE_STATES = new ObjectArray<>();
+    // Block id -> valid property keys (order is important for lookup)
+    private static final ObjectArray<String[]> PROPERTIES_KEYS = new ObjectArray<>();
+    // Block id -> [property key -> values]
+    private static final ObjectArray<String[][]> PROPERTIES_VALUES = new ObjectArray<>();
+    // Block id -> Map<PropertiesValues, Block>
+    private static final ObjectArray<Map<PropertiesHolder, BlockImpl>> POSSIBLE_STATES = new ObjectArray<>();
     private static final Registry.Container<Block> CONTAINER = Registry.createContainer(Registry.Resource.BLOCKS,
             (namespace, object) -> {
+                final int blockId = ((Number) object.get("id")).intValue();
                 final var stateObject = (Map<String, Object>) object.get("states");
-                // Retrieve the block states
+
+                // Retrieve properties
+                String[] keys = new String[0];
+                String[][] values = new String[0][];
+                {
+                    var properties = (Map<String, Object>) object.get("properties");
+                    if (properties != null) {
+                        keys = new String[properties.size()];
+                        values = new String[properties.size()][];
+                        int i = 0;
+                        for (var entry : properties.entrySet()) {
+                            final int entryIndex = i++;
+                            keys[entryIndex] = entry.getKey();
+
+                            final var v = (List<String>) entry.getValue();
+                            values[entryIndex] = v.toArray(String[]::new);
+                        }
+                    }
+                }
+                PROPERTIES_KEYS.set(blockId, keys);
+                PROPERTIES_VALUES.set(blockId, values);
+
+                // Retrieve block states
                 {
                     final var stateEntries = stateObject.entrySet();
                     final int propertiesCount = stateEntries.size();
-                    Map<String, String>[] propertiesKeys = new Map[propertiesCount];
-                    Block[] blocksValues = new Block[propertiesCount];
+                    PropertiesHolder[] propertiesKeys = new PropertiesHolder[propertiesCount];
+                    BlockImpl[] blocksValues = new BlockImpl[propertiesCount];
                     int propertiesOffset = 0;
                     for (var stateEntry : stateEntries) {
                         final String query = stateEntry.getKey();
                         final var stateOverride = (Map<String, Object>) stateEntry.getValue();
                         final var propertyMap = BlockUtils.parseProperties(query);
-                        final Block block = new BlockImpl(Registry.block(namespace, object, stateOverride),
-                                propertyMap, null, null);
+                        assert keys.length == propertyMap.size();
+                        int[] propertiesArray = new int[keys.length];
+                        for (var entry : propertyMap.entrySet()) {
+                            final int keyIndex = ArrayUtils.indexOf(keys, entry.getKey());
+                            if (keyIndex == -1) {
+                                throw new IllegalArgumentException("Unknown property key: " + entry.getKey());
+                            }
+                            final int valueIndex = ArrayUtils.indexOf(values[keyIndex], entry.getValue());
+                            if (valueIndex == -1) {
+                                throw new IllegalArgumentException("Unknown property value: " + entry.getValue());
+                            }
+                            propertiesArray[keyIndex] = valueIndex;
+                        }
+
+                        final BlockImpl block = new BlockImpl(Registry.block(namespace, object, stateOverride),
+                                propertiesArray, null, null);
                         BLOCK_STATE_MAP.set(block.stateId(), block);
-                        propertiesKeys[propertiesOffset] = propertyMap;
+                        propertiesKeys[propertiesOffset] = new PropertiesHolder(propertiesArray);
                         blocksValues[propertiesOffset++] = block;
                     }
-                    POSSIBLE_STATES.set(((Number) object.get("id")).intValue(),
-                            ArrayUtils.toMap(propertiesKeys, blocksValues, propertiesOffset));
+                    POSSIBLE_STATES.set(blockId, ArrayUtils.toMap(propertiesKeys, blocksValues, propertiesOffset));
                 }
                 // Register default state
                 final int defaultState = ((Number) object.get("defaultStateId")).intValue();
@@ -60,6 +100,8 @@ record BlockImpl(@NotNull Registry.BlockEntry registry,
             .build();
 
     static {
+        PROPERTIES_KEYS.trim();
+        PROPERTIES_VALUES.trim();
         BLOCK_STATE_MAP.trim();
         POSSIBLE_STATES.trim();
     }
@@ -84,28 +126,45 @@ record BlockImpl(@NotNull Registry.BlockEntry registry,
         return CONTAINER.values();
     }
 
-    public BlockImpl {
-        properties = Map.copyOf(properties);
-    }
-
     @Override
     public @NotNull Block withProperty(@NotNull String property, @NotNull String value) {
-        var properties = new HashMap<>(this.properties);
-        final String oldProperty = properties.replace(property, value);
-        if (oldProperty == null)
-            throw new IllegalArgumentException("Property " + property + " does not exist");
+        final String[] keys = PROPERTIES_KEYS.get(id());
+        final String[][] values = PROPERTIES_VALUES.get(id());
+        assert keys != null;
+        assert values != null;
+        final int keyIndex = ArrayUtils.indexOf(keys, property);
+        if (keyIndex == -1) {
+            throw new IllegalArgumentException("Property " + property + " is not valid for block " + this);
+        }
+        final int valueIndex = ArrayUtils.indexOf(values[keyIndex], value);
+        if (valueIndex == -1) {
+            throw new IllegalArgumentException("Value " + value + " is not valid for property " + property + " of block " + this);
+        }
+        var properties = this.propertiesArray.clone();
+        properties[keyIndex] = valueIndex;
         return compute(properties);
     }
 
     @Override
     public @NotNull Block withProperties(@NotNull Map<@NotNull String, @NotNull String> properties) {
         if (properties.isEmpty()) return this;
-        if (this.properties.size() == properties.size()) {
-            return compute(properties); // Map should be complete
+        final String[] keys = PROPERTIES_KEYS.get(id());
+        final String[][] values = PROPERTIES_VALUES.get(id());
+        assert keys != null;
+        assert values != null;
+        int[] result = this.propertiesArray.clone();
+        for (var entry : properties.entrySet()) {
+            final int keyIndex = ArrayUtils.indexOf(keys, entry.getKey());
+            if (keyIndex == -1) {
+                throw new IllegalArgumentException("Property " + entry.getKey() + " is not valid for block " + this);
+            }
+            final int valueIndex = ArrayUtils.indexOf(values[keyIndex], entry.getValue());
+            if (valueIndex == -1) {
+                throw new IllegalArgumentException("Value " + entry.getValue() + " is not valid for property " + entry.getKey() + " of block " + this);
+            }
+            result[keyIndex] = valueIndex;
         }
-        var newProperties = new HashMap<>(this.properties);
-        newProperties.putAll(properties);
-        return compute(newProperties);
+        return compute(result);
     }
 
     @Override
@@ -113,17 +172,30 @@ record BlockImpl(@NotNull Registry.BlockEntry registry,
         var temporaryNbt = new MutableNBTCompound(Objects.requireNonNullElse(nbt, NBTCompound.EMPTY));
         tag.write(temporaryNbt, value);
         final var finalNbt = temporaryNbt.getSize() > 0 ? NBT_CACHE.get(temporaryNbt.toCompound(), Function.identity()) : null;
-        return new BlockImpl(registry, properties, finalNbt, handler);
+        return new BlockImpl(registry, propertiesArray, finalNbt, handler);
     }
 
     @Override
     public @NotNull Block withHandler(@Nullable BlockHandler handler) {
-        return new BlockImpl(registry, properties, nbt, handler);
+        return new BlockImpl(registry, propertiesArray, nbt, handler);
+    }
+
+    @Override
+    public @Unmodifiable @NotNull Map<String, String> properties() {
+        final String[] keys = PROPERTIES_KEYS.get(id());
+        final String[][] values = PROPERTIES_VALUES.get(id());
+        assert keys != null;
+        assert values != null;
+        String[] finalValues = new String[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            finalValues[i] = values[i][propertiesArray[i]];
+        }
+        return Map.class.cast(Object2ObjectMaps.unmodifiable(new Object2ObjectArrayMap<>(keys, finalValues, keys.length)));
     }
 
     @Override
     public @NotNull Collection<@NotNull Block> possibleStates() {
-        return possibleProperties().values();
+        return Collection.class.cast(possibleProperties().values());
     }
 
     @Override
@@ -131,20 +203,54 @@ record BlockImpl(@NotNull Registry.BlockEntry registry,
         return tag.read(Objects.requireNonNullElse(nbt, NBTCompound.EMPTY));
     }
 
-    private Map<Map<String, String>, Block> possibleProperties() {
+    private Map<PropertiesHolder, BlockImpl> possibleProperties() {
         return POSSIBLE_STATES.get(id());
     }
 
     @Override
     public String toString() {
-        return String.format("%s{properties=%s, nbt=%s, handler=%s}", name(), properties, nbt, handler);
+        return String.format("%s{properties=%s, nbt=%s, handler=%s}", name(), properties(), nbt, handler);
     }
 
-    private Block compute(Map<String, String> properties) {
-        if (this.properties.equals(properties)) return this;
-        Block block = possibleProperties().get(properties);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BlockImpl block)) return false;
+        return stateId() == block.stateId() && Objects.equals(nbt, block.nbt) && Objects.equals(handler, block.handler);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(stateId(), nbt, handler);
+    }
+
+    private Block compute(int[] properties) {
+        if (Arrays.equals(propertiesArray, properties)) return this;
+        BlockImpl block = possibleProperties().get(new PropertiesHolder(properties));
         if (block == null)
-            throw new IllegalArgumentException("Invalid properties: " + properties + " for block " + this);
-        return nbt == null && handler == null ? block : new BlockImpl(block.registry(), block.properties(), nbt, handler);
+            throw new IllegalArgumentException("Invalid properties: " + Arrays.toString(properties) + " for block " + this);
+        return nbt == null && handler == null ? block : new BlockImpl(block.registry(), block.propertiesArray, nbt, handler);
+    }
+
+    private static final class PropertiesHolder {
+        private final int[] properties;
+        private final int hashCode;
+
+        public PropertiesHolder(int[] properties) {
+            this.properties = properties;
+            this.hashCode = Arrays.hashCode(properties);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof PropertiesHolder that)) return false;
+            return Arrays.equals(properties, that.properties);
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
     }
 }

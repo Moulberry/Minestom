@@ -1,11 +1,11 @@
 package net.minestom.server.utils.block;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.tag.Tag;
-import net.minestom.server.utils.ArrayUtils;
 import net.minestom.server.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -81,14 +81,14 @@ public class BlockUtils {
                 if (equalIndex != -1 && equalIndex < index) {
                     final String key = query.substring(start, equalIndex).trim();
                     final String value = query.substring(equalIndex + 1, index).trim();
-                    keys[entryCount] = key.intern();
-                    values[entryCount++] = value.intern();
+                    keys[entryCount] = key;
+                    values[entryCount++] = value;
                 }
                 start = index + 1;
             }
             index++;
         }
-        return ArrayUtils.toMap(keys, values, entryCount);
+        return new Object2ObjectArrayMap<>(keys, values, entryCount);
     }
 
     public static @Nullable NBTCompound extractClientNbt(@NotNull Block block) {

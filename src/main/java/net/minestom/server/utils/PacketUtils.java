@@ -18,8 +18,6 @@ import net.minestom.server.network.packet.server.SendablePacket;
 import net.minestom.server.network.packet.server.ServerPacket;
 import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.network.player.PlayerSocketConnection;
-import net.minestom.server.network.socket.Server;
-import net.minestom.server.network.socket.Worker;
 import net.minestom.server.utils.binary.BinaryBuffer;
 import net.minestom.server.utils.binary.BinaryWriter;
 import net.minestom.server.utils.binary.PooledBuffers;
@@ -55,20 +53,10 @@ public final class PacketUtils {
     public static final boolean CACHED_PACKET = getBoolean("minestom.cached-packet", true);
     public static final boolean VIEWABLE_PACKET = getBoolean("minestom.viewable-packet", true);
 
-    /// Local buffers
-    private static final LocalCache<ByteBuffer> PACKET_BUFFER = LocalCache.ofBuffer(Server.MAX_PACKET_SIZE);
-    private static final LocalCache<ByteBuffer> LOCAL_BUFFER = LocalCache.ofBuffer(Server.MAX_PACKET_SIZE);
-
     // Viewable packets
     private static final ConcurrentMap<Viewable, ViewableStorage> VIEWABLE_STORAGE_MAP = ConcurrentMap.class.cast(Caffeine.newBuilder().weakKeys().build().asMap());
 
     private PacketUtils() {
-    }
-
-    @ApiStatus.Internal
-    @ApiStatus.Experimental
-    public static ByteBuffer localBuffer() {
-        return LOCAL_BUFFER.get().clear();
     }
 
     /**
@@ -172,8 +160,7 @@ public final class PacketUtils {
     }
 
     @ApiStatus.Internal
-    public static ReadResult readPackets(@NotNull BinaryBuffer readBuffer, boolean compressed,
-                                         @NotNull Worker.Context context) throws DataFormatException {
+    public static ReadResult readPackets(@NotNull BinaryBuffer readBuffer, boolean compressed) throws DataFormatException {
         List<PacketPayload> packets = new ArrayList<>();
         BinaryBuffer remaining = null;
         while (readBuffer.readableBytes() > 0) {
@@ -197,9 +184,9 @@ public final class PacketUtils {
                         decompressedSize = payloadLength;
                     } else {
                         // Decompress to content buffer
-                        content = context.contentBuffer.clear();
+                        content = BinaryBuffer.wrap(PooledBuffers.tempBuffer());
                         decompressedSize = dataLength;
-                        Inflater inflater = context.inflater;
+                        Inflater inflater = new Inflater(); // TODO: Pool?
                         inflater.setInput(readBuffer.asByteBuffer(readBuffer.readerOffset(), payloadLength));
                         inflater.inflate(content.asByteBuffer(0, dataLength));
                         inflater.reset();
@@ -250,7 +237,7 @@ public final class PacketUtils {
         final boolean compressed = packetSize >= MinecraftServer.getCompressionThreshold();
         if (compressed) {
             // Packet large enough, compress it
-            final ByteBuffer input = localBuffer().put(0, buffer, contentStart, packetSize);
+            final ByteBuffer input = PooledBuffers.tempBuffer().put(0, buffer, contentStart, packetSize);
             Deflater deflater = LOCAL_DEFLATER.get();
             deflater.setInput(input.limit(packetSize));
             deflater.finish();
@@ -264,7 +251,7 @@ public final class PacketUtils {
 
     @ApiStatus.Internal
     public static ByteBuffer createFramedPacket(@NotNull ServerPacket packet, boolean compression) {
-        ByteBuffer buffer = PACKET_BUFFER.get().clear();
+        ByteBuffer buffer = PooledBuffers.packetBuffer();
         writeFramedPacket(buffer, packet, compression);
         return buffer.flip();
     }
