@@ -18,6 +18,7 @@ import net.minestom.server.network.packet.server.SendablePacket;
 import net.minestom.server.network.packet.server.ServerPacket;
 import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.network.player.PlayerSocketConnection;
+import net.minestom.server.network.socket.Server;
 import net.minestom.server.utils.binary.BinaryBuffer;
 import net.minestom.server.utils.binary.BinaryWriter;
 import net.minestom.server.utils.binary.PooledBuffers;
@@ -28,10 +29,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 import java.util.zip.DataFormatException;
@@ -168,7 +166,7 @@ public final class PacketUtils {
             try {
                 // Ensure that the buffer contains the full packet (or wait for next socket read)
                 final int packetLength = readBuffer.readVarInt();
-                int readerStart = readBuffer.readerOffset();
+                final int readerStart = readBuffer.readerOffset();
                 if (!readBuffer.canRead(packetLength)) {
                     // Integrity fail
                     throw new BufferUnderflowException();
@@ -176,7 +174,6 @@ public final class PacketUtils {
                 // Read packet https://wiki.vg/Protocol#Packet_format
                 BinaryBuffer content = readBuffer;
                 int decompressedSize = packetLength;
-                ByteBuffer payload = null;
                 if (compressed) {
                     final int dataLength = readBuffer.readVarInt();
                     final int payloadLength = packetLength - (readBuffer.readerOffset() - readerStart);
@@ -184,19 +181,17 @@ public final class PacketUtils {
                         // Data is too small to be compressed, payload is following
                         decompressedSize = payloadLength;
                     } else {
-                        // Decompress to content buffer
+                        // Decompress to content buffer 
                         content = BinaryBuffer.wrap(PooledBuffers.tempBuffer());
                         decompressedSize = dataLength;
                         Inflater inflater = new Inflater(); // TODO: Pool?
-                        byte[] bytes = new byte[dataLength];
                         inflater.setInput(readBuffer.asByteBuffer(readBuffer.readerOffset(), payloadLength));
-                        inflater.inflate(bytes);
+                        inflater.inflate(content.asByteBuffer(0, dataLength));
                         inflater.reset();
-                        payload = ByteBuffer.wrap(bytes);
                     }
                 }
                 // Slice packet
-                if (payload == null) payload = content.asByteBuffer(content.readerOffset(), decompressedSize);
+                ByteBuffer payload = content.asByteBuffer(content.readerOffset(), decompressedSize);
                 final int packetId = Utils.readVarInt(payload);
                 packets.add(new PacketPayload(packetId, payload));
                 // Position buffer to read the next packet
