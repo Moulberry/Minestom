@@ -22,6 +22,7 @@ import net.minestom.server.network.socket.Server;
 import net.minestom.server.utils.binary.BinaryBuffer;
 import net.minestom.server.utils.binary.BinaryWriter;
 import net.minestom.server.utils.binary.PooledBuffers;
+import net.minestom.server.utils.binary.Writeable;
 import net.minestom.server.utils.cache.LocalCache;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -214,12 +215,20 @@ public final class PacketUtils {
     public static void writeFramedPacket(@NotNull ByteBuffer buffer,
                                          @NotNull ServerPacket packet,
                                          boolean compression) {
+        writeFramedPacket(buffer, packet.getId(), packet,
+                compression ? MinecraftServer.getCompressionThreshold() : 0);
+    }
+
+    public static void writeFramedPacket(@NotNull ByteBuffer buffer,
+                                         int id,
+                                         @NotNull Writeable writeable,
+                                         int compressionThreshold) {
         BinaryWriter writerView = BinaryWriter.view(buffer); // ensure that the buffer is not resized
-        if (!compression) {
+        if (compressionThreshold <= 0) {
             // Uncompressed format https://wiki.vg/Protocol#Without_compression
             final int lengthIndex = Utils.writeEmptyVarIntHeader(buffer);
-            Utils.writeVarInt(buffer, packet.getId());
-            packet.write(writerView);
+            Utils.writeVarInt(buffer, id);
+            writeable.write(writerView);
             final int finalSize = buffer.position() - (lengthIndex + 3);
             Utils.writeVarIntHeader(buffer, lengthIndex, finalSize);
             return;
@@ -229,10 +238,10 @@ public final class PacketUtils {
         final int uncompressedIndex = Utils.writeEmptyVarIntHeader(buffer);
 
         final int contentStart = buffer.position();
-        Utils.writeVarInt(buffer, packet.getId());
-        packet.write(writerView);
+        Utils.writeVarInt(buffer, id);
+        writeable.write(writerView);
         final int packetSize = buffer.position() - contentStart;
-        final boolean compressed = packetSize >= MinecraftServer.getCompressionThreshold();
+        final boolean compressed = packetSize >= compressionThreshold;
         if (compressed) {
             // Packet large enough, compress it
             final ByteBuffer input = PooledBuffers.tempBuffer().put(0, buffer, contentStart, packetSize);

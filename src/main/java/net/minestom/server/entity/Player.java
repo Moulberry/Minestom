@@ -317,7 +317,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         this.playerConnection.update();
 
         // Process received packets
-        this.packets.drain(packet -> MinecraftServer.getPacketListenerManager().processClientPacket(packet, this));
+        interpretPacketQueue();
 
         super.update(time); // Super update (item pickup/fire management)
 
@@ -1709,6 +1709,13 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
      */
     public void addPacketToQueue(@NotNull ClientPacket packet) {
         this.packets.offer(packet);
+    }
+
+    @ApiStatus.Internal
+    @ApiStatus.Experimental
+    public void interpretPacketQueue() {
+        // This method is NOT thread-safe
+        this.packets.drain(packet -> MinecraftServer.getPacketListenerManager().processClientPacket(packet, this));
     }
 
     /**
