@@ -168,7 +168,7 @@ public final class PacketUtils {
             try {
                 // Ensure that the buffer contains the full packet (or wait for next socket read)
                 final int packetLength = readBuffer.readVarInt();
-                final int readerStart = readBuffer.readerOffset();
+                int readerStart = readBuffer.readerOffset();
                 if (!readBuffer.canRead(packetLength)) {
                     // Integrity fail
                     throw new BufferUnderflowException();
@@ -176,6 +176,7 @@ public final class PacketUtils {
                 // Read packet https://wiki.vg/Protocol#Packet_format
                 BinaryBuffer content = readBuffer;
                 int decompressedSize = packetLength;
+                ByteBuffer payload = null;
                 if (compressed) {
                     final int dataLength = readBuffer.readVarInt();
                     final int payloadLength = packetLength - (readBuffer.readerOffset() - readerStart);
@@ -187,13 +188,15 @@ public final class PacketUtils {
                         content = BinaryBuffer.wrap(PooledBuffers.tempBuffer());
                         decompressedSize = dataLength;
                         Inflater inflater = new Inflater(); // TODO: Pool?
+                        byte[] bytes = new byte[dataLength];
                         inflater.setInput(readBuffer.asByteBuffer(readBuffer.readerOffset(), payloadLength));
-                        inflater.inflate(content.asByteBuffer(0, dataLength));
+                        inflater.inflate(bytes);
                         inflater.reset();
+                        payload = ByteBuffer.wrap(bytes);
                     }
                 }
                 // Slice packet
-                ByteBuffer payload = content.asByteBuffer(content.readerOffset(), decompressedSize);
+                if (payload == null) payload = content.asByteBuffer(content.readerOffset(), decompressedSize);
                 final int packetId = Utils.readVarInt(payload);
                 packets.add(new PacketPayload(packetId, payload));
                 // Position buffer to read the next packet
