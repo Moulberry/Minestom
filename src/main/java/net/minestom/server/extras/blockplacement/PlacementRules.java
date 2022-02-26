@@ -107,6 +107,10 @@ public final class PlacementRules {
             .map(PlayerBlockPlaceEvent.class, BlockPlaceMechanicBell::onPlace)
             .build();
 
+    private static final EventBinding<BlockEvent> GRINDSTONE_BINDING = EventBinding.filtered(EventFilter.BLOCK, PlacementRules::isGrindstone)
+            .map(PlayerBlockPlaceEvent.class, BlockPlaceMechanicGrindstone::onPlace)
+            .build();
+
     private static final EventBinding<BlockEvent> TWISTING_VINES_BINDING = EventBinding.filtered(EventFilter.BLOCK, PlacementRules::isTwistingVine)
             .map(PlayerBlockPlaceEvent.class, BlockPlaceMechanicVerticalPlant.TWISTING_VINES::onPlace)
             .map(PlayerBlockUpdateNeighborEvent.class, BlockPlaceMechanicVerticalPlant.TWISTING_VINES::onNeighbor)
@@ -218,13 +222,19 @@ public final class PlacementRules {
         return MINECRAFT_WALL_SIGNS.contains(block.namespace());
     }
 
+    private static Set<NamespaceID> MINECRAFT_TRAPDOORS;
+    static boolean isTrapDoor(Block block) {
+        return MINECRAFT_TRAPDOORS.contains(block.namespace());
+    }
+
     private static Set<NamespaceID> MINECRAFT_FENCES;
     private static boolean isFence(Block block) {
-        return MINECRAFT_FENCES.contains(block.namespace());
+        return MINECRAFT_FENCES.contains(block.namespace()) || block.compare(Block.IRON_BARS) ||
+                block.namespace().path().contains("GLASS_PANE");
     }
 
     private static Set<NamespaceID> MINECRAFT_DOORS;
-    private static boolean isDoor(Block block) {
+    static boolean isDoor(Block block) {
         return MINECRAFT_DOORS.contains(block.namespace());
     }
 
@@ -256,6 +266,10 @@ public final class PlacementRules {
 
     private static boolean isBell(Block block) {
         return block.compare(Block.BELL);
+    }
+
+    private static boolean isGrindstone(Block block) {
+        return block.compare(Block.GRINDSTONE);
     }
 
     private static boolean isTwistingVine(Block block) {
@@ -316,6 +330,7 @@ public final class PlacementRules {
         final String WALL_SIGNS = "minecraft:wall_signs";
         final String TALL_FLOWERS = "minecraft:tall_flowers";
         final String DOORS = "minecraft:doors";
+        final String TRAPDOORS = "minecraft:trapdoors";
 
         for (Tag tag : MinecraftServer.getTagManager().getTagMap().get(Tag.BasicType.BLOCKS)) {
             switch (tag.getName().toString()) {
@@ -327,6 +342,7 @@ public final class PlacementRules {
                 case WALL_SIGNS -> MINECRAFT_WALL_SIGNS = tag.getValues();
                 case TALL_FLOWERS -> MINECRAFT_TALL_FLOWERS = tag.getValues();
                 case DOORS -> MINECRAFT_DOORS = tag.getValues();
+                case TRAPDOORS -> MINECRAFT_TRAPDOORS = tag.getValues();
             }
         }
 
@@ -374,6 +390,7 @@ public final class PlacementRules {
         eventNode.register(GLOW_LICHEN_BINDING);
         eventNode.register(VINE_BINDING);
         eventNode.register(BELL_BINDING);
+        eventNode.register(GRINDSTONE_BINDING);
         eventNode.register(POINTED_DRIPSTONE_BINDING);
         eventNode.register(DOOR_HINGE_BINDING);
         eventNode.register(CAVE_VINES_BINDING);

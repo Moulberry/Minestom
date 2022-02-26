@@ -22,6 +22,10 @@ class BlockPlaceMechanicRotation {
         if(PlacementRules.isWallSign(block)) {
             USE_BLOCK_FACING.add(block.namespace());
         }
+
+        if (PlacementRules.isTrapDoor(block)) {
+            ROTATION_INVERT.add(block.namespace());
+        }
     }
 
     static void onPlace(Block block, PlayerBlockPlaceEvent event) {
@@ -112,7 +116,7 @@ class BlockPlaceMechanicRotation {
     }
 
     private static final Set<Integer> ROTATION_VERTICAL = new HashSet<>();
-    private static Set<NamespaceID> ROTATION_INVERT = Set.of(
+    private static Set<NamespaceID> ROTATION_INVERT = new HashSet<>(Set.of(
             NamespaceID.from("minecraft:barrel"),
             NamespaceID.from("minecraft:command_block"),
             NamespaceID.from("minecraft:repeating_command_block"),
@@ -128,7 +132,7 @@ class BlockPlaceMechanicRotation {
             NamespaceID.from("minecraft:bell"),
             NamespaceID.from("minecraft:comparator"),
             NamespaceID.from("minecraft:repeater")
-    );
+    ));
     private static Set<NamespaceID> USE_BLOCK_FACING = new HashSet<>(Set.of(
             NamespaceID.from("minecraft:glow_lichen"),
             NamespaceID.from("minecraft:cocoa"),

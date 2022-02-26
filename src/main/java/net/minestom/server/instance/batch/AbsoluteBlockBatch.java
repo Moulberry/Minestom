@@ -130,6 +130,8 @@ public class AbsoluteBlockBatch implements Batch<Runnable> {
                 final int chunkX = ChunkUtils.getChunkCoordX(chunkIndex);
                 final int chunkZ = ChunkUtils.getChunkCoordZ(chunkIndex);
                 final ChunkBatch batch = entry.getValue();
+
+
                 ChunkBatch chunkInverse = batch.apply(instance, chunkX, chunkZ, c -> {
                     final boolean isLast = counter.incrementAndGet() == chunkBatchesMap.size();
                     // Execute the callback if this was the last chunk to process

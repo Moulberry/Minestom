@@ -11,6 +11,7 @@ import java.util.Map;
 class BlockPlaceMechanicWallReplacement {
 
     private static final Map<NamespaceID, Block> WALL_REPLACEMENTS = new HashMap<>();
+    private static final Map<NamespaceID, Block> NON_WALL_REPLACEMENTS = new HashMap<>();
     static {
         WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:dead_tube_coral_fan"), Block.DEAD_TUBE_CORAL_WALL_FAN);
         WALL_REPLACEMENTS.put(NamespaceID.from("minecraft:dead_brain_coral_fan"), Block.DEAD_BRAIN_CORAL_WALL_FAN);
