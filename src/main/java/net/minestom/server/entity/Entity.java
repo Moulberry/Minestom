@@ -15,7 +15,6 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.metadata.EntityMeta;
 import net.minestom.server.event.EventDispatcher;
-import net.minestom.server.event.GlobalHandles;
 import net.minestom.server.event.entity.*;
 import net.minestom.server.event.instance.AddEntityToInstanceEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
@@ -41,7 +40,6 @@ import net.minestom.server.timer.Schedulable;
 import net.minestom.server.timer.Scheduler;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.PacketUtils;
-import net.minestom.server.utils.ViewEngine;
 import net.minestom.server.utils.async.AsyncUtils;
 import net.minestom.server.utils.block.BlockIterator;
 import net.minestom.server.utils.chunk.ChunkUtils;
@@ -129,40 +127,15 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
 
         @Override
         public void referenceUpdate(@NotNull Point point, @Nullable EntityTracker tracker) {
-            viewEngine.updateTracker(point, tracker);
+            final Instance currentInstance = tracker != null ? instance : null;
+            assert currentInstance == null || currentInstance.getEntityTracker() == tracker :
+                    "EntityTracker does not match current instance";
+            viewEngine.updateTracker(currentInstance, point);
         }
     };
 
-    protected final ViewEngine viewEngine = new ViewEngine(this,
-            player -> {
-                // Add viewable
-                var lock1 = player.getEntityId() < getEntityId() ? player : this;
-                var lock2 = lock1 == this ? player : this;
-                synchronized (lock1.viewEngine.mutex()) {
-                    synchronized (lock2.viewEngine.mutex()) {
-                        if (!Entity.this.viewEngine.viewableOption.predicate(player) ||
-                                !player.viewEngine.viewerOption.predicate(this)) return;
-                        Entity.this.viewEngine.viewableOption.register(player);
-                        player.viewEngine.viewerOption.register(this);
-                    }
-                }
-                updateNewViewer(player);
-            },
-            player -> {
-                // Remove viewable
-                var lock1 = player.getEntityId() < getEntityId() ? player : this;
-                var lock2 = lock1 == this ? player : this;
-                synchronized (lock1.viewEngine.mutex()) {
-                    synchronized (lock2.viewEngine.mutex()) {
-                        Entity.this.viewEngine.viewableOption.unregister(player);
-                        player.viewEngine.viewerOption.unregister(this);
-                    }
-                }
-                updateOldViewer(player);
-            },
-            this instanceof Player player ? entity -> entity.viewEngine.viewableOption.addition.accept(player) : null,
-            this instanceof Player player ? entity -> entity.viewEngine.viewableOption.removal.accept(player) : null);
-    protected final Set<Player> viewers = viewEngine.asSet();
+    protected final EntityView viewEngine = new EntityView(this);
+    protected final Set<Player> viewers = viewEngine.set;
     private final MutableNBTCompound nbtCompound = new MutableNBTCompound();
     private final Scheduler scheduler = Scheduler.newScheduler();
     private final Set<Permission> permissions = new CopyOnWriteArraySet<>();
@@ -448,7 +421,7 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
         final Set<Entity> passengers = this.passengers;
         if (!passengers.isEmpty()) {
             for (Entity passenger : passengers) {
-                if (passenger != player) passenger.viewEngine.viewableOption.addition.accept(player);
+                if (passenger != player) passenger.updateNewViewer(player);
             }
             player.sendPacket(getPassengersPacket());
         }
@@ -467,7 +440,7 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
         final Set<Entity> passengers = this.passengers;
         if (!passengers.isEmpty()) {
             for (Entity passenger : passengers) {
-                if (passenger != player) passenger.viewEngine.viewableOption.removal.accept(player);
+                if (passenger != player) passenger.updateOldViewer(player);
             }
         }
         player.sendPacket(destroyPacketCache);
@@ -542,7 +515,7 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
             update(time);
 
             ticks++;
-            GlobalHandles.ENTITY_TICK.call(new EntityTickEvent(this));
+            EventDispatcher.call(new EntityTickEvent(this));
 
             // remove expired effects
             effectTick(time);
@@ -598,7 +571,7 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
             return;
         }
 
-        if (this instanceof ItemEntity) {
+        if (entityType == EntityTypes.ITEM || entityType == EntityType.FALLING_BLOCK) {
             // TODO find other exceptions
             this.previousPosition = this.position;
             this.position = finalVelocityPosition;
@@ -1453,7 +1426,11 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
      * @param temporalUnit the unit of the delay
      */
     public void scheduleRemove(long delay, @NotNull TemporalUnit temporalUnit) {
-        scheduleRemove(Duration.of(delay, temporalUnit));
+        if (temporalUnit == TimeUnit.SERVER_TICK) {
+            scheduleRemove(TaskSchedule.tick((int) delay));
+        } else {
+            scheduleRemove(Duration.of(delay, temporalUnit));
+        }
     }
 
     /**
@@ -1462,7 +1439,11 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
      * @param delay the time before removing the entity
      */
     public void scheduleRemove(Duration delay) {
-        this.scheduler.buildTask(this::remove).delay(TaskSchedule.duration(delay)).schedule();
+        scheduleRemove(TaskSchedule.duration(delay));
+    }
+
+    private void scheduleRemove(TaskSchedule schedule) {
+        this.scheduler.buildTask(this::remove).delay(schedule).schedule();
     }
 
     protected @NotNull Vec getVelocityForPacket() {

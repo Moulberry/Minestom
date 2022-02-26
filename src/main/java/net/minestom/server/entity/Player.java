@@ -32,7 +32,6 @@ import net.minestom.server.entity.fakeplayer.FakePlayer;
 import net.minestom.server.entity.metadata.PlayerMeta;
 import net.minestom.server.entity.vehicle.PlayerVehicleInformation;
 import net.minestom.server.event.EventDispatcher;
-import net.minestom.server.event.GlobalHandles;
 import net.minestom.server.event.inventory.InventoryOpenEvent;
 import net.minestom.server.event.item.ItemDropEvent;
 import net.minestom.server.event.item.ItemUpdateStateEvent;
@@ -125,7 +124,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
             try {
                 if (chunk != null) {
                     chunk.sendChunk(this);
-                    GlobalHandles.PLAYER_CHUNK_LOAD.call(new PlayerChunkLoadEvent(this, chunkX, chunkZ));
+                    EventDispatcher.call(new PlayerChunkLoadEvent(this, chunkX, chunkZ));
                 }
             } catch (Exception e) {
                 MinecraftServer.getExceptionManager().handleException(e);
@@ -135,7 +134,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     final IntegerBiConsumer chunkRemover = (chunkX, chunkZ) -> {
         // Unload old chunks
         sendPacket(new UnloadChunkPacket(chunkX, chunkZ));
-        GlobalHandles.PLAYER_CHUNK_UNLOAD.call(new PlayerChunkUnloadEvent(this, chunkX, chunkZ));
+        EventDispatcher.call(new PlayerChunkUnloadEvent(this, chunkX, chunkZ));
     };
 
     private final AtomicInteger teleportId = new AtomicInteger();
@@ -362,7 +361,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         }
 
         // Tick event
-        GlobalHandles.PLAYER_TICK.call(new PlayerTickEvent(this));
+        EventDispatcher.call(new PlayerTickEvent(this));
     }
 
     @Override
@@ -1229,7 +1228,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         // Condition to prevent sending the packets before spawning the player
         if (isActive()) {
             sendPacket(new ChangeGameStatePacket(ChangeGameStatePacket.Reason.CHANGE_GAMEMODE, gameMode.getId()));
-            sendPacketToViewersAndSelf(new PlayerInfoPacket(PlayerInfoPacket.Action.UPDATE_GAMEMODE,
+            PacketUtils.broadcastPacket(new PlayerInfoPacket(PlayerInfoPacket.Action.UPDATE_GAMEMODE,
                     new PlayerInfoPacket.UpdateGameMode(getUuid(), gameMode)));
         }
 
@@ -1254,6 +1253,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
             }
         }
 
+        // Make sure that the player is in the PLAY state and synchronize their flight speed.
         if (isActive()) {
             refreshAbilities();
         }
@@ -2028,6 +2028,8 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         private boolean chatColors;
         private byte displayedSkinParts;
         private MainHand mainHand;
+        private boolean enableTextFiltering;
+        private boolean allowServerListings;
 
         public PlayerSettings() {
             viewDistance = 2;
@@ -2082,6 +2084,10 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
             return mainHand;
         }
 
+        public boolean enableTextFiltering() { return enableTextFiltering; }
+
+        public boolean allowServerListings() { return allowServerListings; }
+
         /**
          * Changes the player settings internally.
          * <p>
@@ -2095,13 +2101,15 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
          * @param mainHand           the player main hand
          */
         public void refresh(String locale, byte viewDistance, ChatMessageType chatMessageType, boolean chatColors,
-                            byte displayedSkinParts, MainHand mainHand) {
+                            byte displayedSkinParts, MainHand mainHand, boolean enableTextFiltering, boolean allowServerListings) {
             this.locale = locale;
             this.viewDistance = viewDistance;
             this.chatMessageType = chatMessageType;
             this.chatColors = chatColors;
             this.displayedSkinParts = displayedSkinParts;
             this.mainHand = mainHand;
+            this.enableTextFiltering = enableTextFiltering;
+            this.allowServerListings = allowServerListings;
 
             // TODO: Use the metadata object here
             metadata.setIndex((byte) 17, Metadata.Byte(displayedSkinParts));

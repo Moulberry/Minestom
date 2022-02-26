@@ -1,10 +1,9 @@
 package net.minestom.server.entity;
 
-import net.minestom.server.MinecraftServer;
 import net.minestom.server.api.Env;
 import net.minestom.server.api.EnvTest;
 import net.minestom.server.coordinate.Pos;
-import net.minestom.server.network.packet.server.play.ChunkDataPacket;
+import net.minestom.server.network.packet.server.play.SpawnLivingEntityPacket;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,6 +49,23 @@ public class EntityViewIntegrationTest {
     }
 
     @Test
+    public void manualViewers(Env env) {
+        var instance = env.createFlatInstance();
+        var p1 = env.createPlayer(instance, new Pos(0, 42, 0));
+        var p2 = env.createPlayer(instance, new Pos(0, 42, 5_000));
+
+        assertEquals(0, p1.getViewers().size());
+        assertEquals(0, p2.getViewers().size());
+        p1.addViewer(p2);
+        assertEquals(1, p1.getViewers().size());
+        assertEquals(0, p2.getViewers().size());
+
+        p2.teleport(new Pos(0, 42, 0)).join();
+        assertEquals(1, p1.getViewers().size());
+        assertEquals(1, p2.getViewers().size());
+    }
+
+    @Test
     public void movements(Env env) {
         var instance = env.createFlatInstance();
         var p1 = env.createPlayer(instance, new Pos(0, 42, 0));
@@ -81,68 +97,50 @@ public class EntityViewIntegrationTest {
     }
 
     @Test
-    public void viewableRule(Env env) {
-        var instance = env.createFlatInstance();
-        var p1 = env.createPlayer(instance, new Pos(0, 42, 0));
-        p1.updateViewableRule(player -> player.getEntityId() == p1.getEntityId() + 1);
-
-        var p2 = env.createPlayer(instance, new Pos(0, 42, 0));
-
-        assertEquals(1, p1.getViewers().size());
-        assertEquals(1, p2.getViewers().size());
-
-        p1.updateViewableRule(player -> false);
-
-        assertEquals(0, p1.getViewers().size());
-        assertEquals(1, p2.getViewers().size());
-    }
-
-    @Test
-    public void viewerRule(Env env) {
-        var instance = env.createFlatInstance();
-        var p1 = env.createPlayer(instance, new Pos(0, 42, 0));
-        p1.updateViewerRule(player -> player.getEntityId() == p1.getEntityId() + 1);
-
-        var p2 = env.createPlayer(instance, new Pos(0, 42, 0));
-
-        assertEquals(1, p1.getViewers().size());
-        assertEquals(1, p2.getViewers().size());
-
-        p1.updateViewerRule(player -> false);
-
-        assertEquals(1, p1.getViewers().size());
-        assertEquals(0, p2.getViewers().size());
-    }
-
-    @Test
-    public void playerChunkRenderDistance(Env env) {
-        final int viewRadius = MinecraftServer.getChunkViewDistance();
-        final int viewLength = 1 + viewRadius * 2;
-
+    public void livingVehicle(Env env) {
         var instance = env.createFlatInstance();
         var connection = env.createConnection();
+        var player = connection.connect(instance, new Pos(0, 40, 0)).join();
 
-        // Check initial load
+        var vehicle = new Entity(EntityType.ZOMBIE);
+        var passenger = new Entity(EntityType.ZOMBIE);
+
+        var tracker = connection.trackIncoming(SpawnLivingEntityPacket.class);
+
+        vehicle.setInstance(instance, new Pos(0, 40, 0)).join();
+        vehicle.addPassenger(passenger);
+        // Verify packets
         {
-            var tracker = connection.trackIncoming(ChunkDataPacket.class);
-
-            var player = connection.connect(instance, new Pos(0, 40, 0)).join();
-            assertEquals(instance, player.getInstance());
-            assertEquals(new Pos(0, 40, 0), player.getPosition());
-
-            assertEquals(viewLength * viewLength, tracker.collect().size());
+            var results = tracker.collect();
+            assertEquals(2, results.size());
+            assertEquals(vehicle.getEntityId(), results.get(0).entityId());
+            assertEquals(passenger.getEntityId(), results.get(1).entityId());
         }
-
-        // Check chunk#sendChunk
+        // Verify viewers
         {
-            var tracker = connection.trackIncoming(ChunkDataPacket.class);
-
-            for (int x = -viewRadius; x <= viewRadius; x++) {
-                for (int z = -viewRadius; z <= viewRadius; z++) {
-                    instance.getChunk(x, z).sendChunk();
-                }
-            }
-            assertEquals(viewLength * viewLength, tracker.collect().size());
+            assertEquals(0, player.getViewers().size());
+            assertEquals(1, vehicle.getViewers().size());
+            assertTrue(vehicle.isViewer(player));
+            assertEquals(1, passenger.getViewers().size());
+            assertTrue(passenger.isViewer(player));
         }
+    }
+
+    @Test
+    public void vehicleInheritance(Env env) {
+        var instance = env.createFlatInstance();
+        var p1 = env.createPlayer(instance, new Pos(0, 40, 0));
+        var p2 = env.createPlayer(instance, new Pos(0, 40, 0));
+
+        var vehicle = new Entity(EntityType.ZOMBIE);
+        vehicle.setInstance(instance, new Pos(0, 40, 0)).join();
+        vehicle.addPassenger(p1);
+
+        var vehicle2 = new Entity(EntityType.ZOMBIE);
+        vehicle2.setInstance(instance, new Pos(0, 40, 0)).join();
+        vehicle2.addPassenger(p2);
+
+        assertEquals(2, vehicle.getViewers().size());
+        assertEquals(2, vehicle2.getViewers().size());
     }
 }
