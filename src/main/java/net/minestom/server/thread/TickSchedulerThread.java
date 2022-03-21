@@ -18,6 +18,7 @@ public final class TickSchedulerThread extends MinestomThread {
     @Override
     public void run() {
         final long tickNs = (long) (MinecraftServer.TICK_MS * 1e6);
+
         while (serverProcess.isAlive()) {
             final long tickStart = System.nanoTime();
             try {
@@ -25,9 +26,13 @@ public final class TickSchedulerThread extends MinestomThread {
             } catch (Exception e) {
                 serverProcess.exception().handleException(e);
             }
-            final long wait = tickStart + tickNs - System.nanoTime();
-            assert wait <= tickNs : "Wait time is too long: " + (wait / 1e6) + "ms";
-            LockSupport.parkNanos(wait);
+
+            while (true) {
+                long wait = tickStart + tickNs - System.nanoTime();
+                assert wait <= tickNs : "Wait time is too long: " + (wait / 1e6) + "ms";
+                if (wait <= 0) break;
+                LockSupport.parkNanos(wait);
+            }
         }
     }
 }
