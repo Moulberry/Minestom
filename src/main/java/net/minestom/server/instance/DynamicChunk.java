@@ -4,6 +4,7 @@ import com.extollit.gaming.ai.path.model.ColumnarOcclusionFieldList;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
+import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.pathfinding.PFBlock;
 import net.minestom.server.instance.block.Block;
@@ -13,6 +14,9 @@ import net.minestom.server.network.packet.server.play.ChunkDataPacket;
 import net.minestom.server.network.packet.server.play.UpdateLightPacket;
 import net.minestom.server.network.packet.server.play.data.ChunkData;
 import net.minestom.server.network.packet.server.play.data.LightData;
+import net.minestom.server.snapshot.ChunkSnapshot;
+import net.minestom.server.snapshot.SnapshotUpdater;
+import net.minestom.server.utils.ArrayUtils;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.Utils;
 import net.minestom.server.utils.binary.BinaryWriter;
@@ -54,6 +58,7 @@ public class DynamicChunk extends Chunk {
 
     @Override
     public void setBlock(int x, int y, int z, @NotNull Block block) {
+        assertLock();
         this.lastChange = System.currentTimeMillis();
         this.chunkCache.invalidate();
         this.lightCache.invalidate();
@@ -85,6 +90,7 @@ public class DynamicChunk extends Chunk {
 
     @Override
     public void setBiome(int x, int y, int z, @NotNull Biome biome) {
+        assertLock();
         this.chunkCache.invalidate();
         Section section = getSectionAt(y);
         section.biomePalette().set(
@@ -118,6 +124,7 @@ public class DynamicChunk extends Chunk {
 
     @Override
     public @Nullable Block getBlock(int x, int y, int z, @NotNull Condition condition) {
+        assertLock();
         if (y < minSection * CHUNK_SECTION_SIZE || y >= maxSection * CHUNK_SECTION_SIZE)
             return Block.AIR; // Out of bounds
 
@@ -138,6 +145,7 @@ public class DynamicChunk extends Chunk {
 
     @Override
     public @NotNull Biome getBiome(int x, int y, int z) {
+        assertLock();
         final Section section = getSectionAt(y);
         final int id = section.biomePalette()
                 .get(toSectionRelativeCoordinate(x) / 4, toSectionRelativeCoordinate(y) / 4, toSectionRelativeCoordinate(z) / 4);
@@ -238,4 +246,19 @@ public class DynamicChunk extends Chunk {
                 skyLights, blockLights);
     }
 
+    @Override
+    public @NotNull ChunkSnapshot updateSnapshot(@NotNull SnapshotUpdater updater) {
+        Section[] clonedSections = new Section[sections.size()];
+        for (int i = 0; i < clonedSections.length; i++)
+            clonedSections[i] = sections.get(i).clone();
+        var entities = instance.getEntityTracker().chunkEntities(chunkX, chunkZ, EntityTracker.Target.ENTITIES);
+        final int[] entityIds = ArrayUtils.mapToIntArray(entities, Entity::getEntityId);
+        return new InstanceSnapshotImpl.Chunk(minSection, chunkX, chunkZ,
+                clonedSections, entries.clone(), entityIds, updater.reference(instance),
+                tagHandler().readableCopy());
+    }
+
+    private void assertLock() {
+        assert Thread.holdsLock(this) : "Chunk must be locked before access";
+    }
 }

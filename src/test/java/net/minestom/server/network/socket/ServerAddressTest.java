@@ -14,7 +14,7 @@ public class ServerAddressTest {
 
     @Test
     public void inetAddressTest() throws IOException {
-        InetSocketAddress address = new InetSocketAddress("localhost", 25565);
+        InetSocketAddress address = new InetSocketAddress("localhost", 0);
         var server = new Server(new PacketProcessor());
         server.init(address);
         assertSame(address, server.socketAddress());

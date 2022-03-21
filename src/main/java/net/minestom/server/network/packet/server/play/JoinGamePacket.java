@@ -26,16 +26,14 @@ public record JoinGamePacket(int entityId, boolean isHardcore, GameMode gameMode
     public void write(@NotNull BinaryWriter writer) {
         writer.writeInt(entityId);
         writer.writeBoolean(isHardcore);
-        writer.writeByte(gameMode.getId());
+        writer.writeByte(gameMode.id());
         if (previousGameMode != null) {
-            writer.writeByte(previousGameMode.getId());
+            writer.writeByte(previousGameMode.id());
         } else {
             writer.writeByte((byte) -1);
         }
 
-        //array of worlds
-        writer.writeVarInt(1);
-        writer.writeSizedString("minestom:world");
+        writer.writeVarIntList(worlds, BinaryWriter::writeSizedString);
 
         writer.writeNBT("", dimensionCodec);
         writer.writeNBT("", dimension);

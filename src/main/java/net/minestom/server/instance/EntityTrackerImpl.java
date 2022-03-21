@@ -112,7 +112,11 @@ final class EntityTrackerImpl implements EntityTracker {
     @Override
     public <T extends Entity> void nearbyEntities(@NotNull Point point, double range, @NotNull Target<T> target, @NotNull Consumer<T> query) {
         final TargetEntry<Entity> entry = entries[target.ordinal()];
-        final int chunkRange = (int) (range / Chunk.CHUNK_SECTION_SIZE);
+        int chunkRange = (int) (range / Chunk.CHUNK_SECTION_SIZE);
+        if (point.x() % 16 != 0 || point.z() % 16 != 0) {
+            chunkRange++; // Need to loop through surrounding chunks to properly support borders
+        }
+        // Loop through range
         if (range % 16 == 0) {
             // Fast path for exact chunk range
             forChunksInRange(point, chunkRange, (chunkX, chunkZ) -> {

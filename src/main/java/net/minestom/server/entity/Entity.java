@@ -6,18 +6,24 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowEntity;
 import net.kyori.adventure.text.event.HoverEventSource;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.ServerProcess;
 import net.minestom.server.Tickable;
 import net.minestom.server.Viewable;
 import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.collision.CollisionUtils;
+import net.minestom.server.collision.PhysicsResult;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.metadata.EntityMeta;
 import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.EventFilter;
+import net.minestom.server.event.EventHandler;
+import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.*;
 import net.minestom.server.event.instance.AddEntityToInstanceEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
+import net.minestom.server.event.trait.EntityEvent;
 import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.EntityTracker;
 import net.minestom.server.instance.Instance;
@@ -33,15 +39,20 @@ import net.minestom.server.permission.PermissionHandler;
 import net.minestom.server.potion.Potion;
 import net.minestom.server.potion.PotionEffect;
 import net.minestom.server.potion.TimedPotion;
-import net.minestom.server.tag.Tag;
+import net.minestom.server.snapshot.EntitySnapshot;
+import net.minestom.server.snapshot.SnapshotUpdater;
+import net.minestom.server.snapshot.Snapshotable;
 import net.minestom.server.tag.TagHandler;
+import net.minestom.server.tag.Taggable;
 import net.minestom.server.thread.Acquirable;
 import net.minestom.server.timer.Schedulable;
 import net.minestom.server.timer.Scheduler;
 import net.minestom.server.timer.TaskSchedule;
+import net.minestom.server.utils.ArrayUtils;
 import net.minestom.server.utils.PacketUtils;
 import net.minestom.server.utils.async.AsyncUtils;
 import net.minestom.server.utils.block.BlockIterator;
+import net.minestom.server.utils.chunk.ChunkCache;
 import net.minestom.server.utils.chunk.ChunkUtils;
 import net.minestom.server.utils.entity.EntityUtils;
 import net.minestom.server.utils.player.PlayerUtils;
@@ -52,7 +63,6 @@ import net.minestom.server.utils.validate.Check;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jglrxavpok.hephaistos.nbt.mutable.MutableNBTCompound;
 import space.vectrix.flare.fastutil.Int2ObjectSyncMap;
 
 import java.time.Duration;
@@ -72,7 +82,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * To create your own entity you probably want to extends {@link LivingEntity} or {@link EntityCreature} instead.
  */
-public class Entity implements Viewable, Tickable, Schedulable, TagHandler, PermissionHandler, HoverEventSource<ShowEntity>, Sound.Emitter {
+public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, EventHandler<EntityEvent>, Taggable, PermissionHandler, HoverEventSource<ShowEntity>, Sound.Emitter {
 
     private static final Int2ObjectSyncMap<Entity> ENTITY_BY_ID = Int2ObjectSyncMap.hashmap();
     private static final Map<UUID, Entity> ENTITY_BY_UUID = new ConcurrentHashMap<>();
@@ -88,6 +98,7 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
     protected boolean onGround;
 
     private BoundingBox boundingBox;
+    private PhysicsResult lastPhysicsResult = null;
 
     protected Entity vehicle;
 
@@ -136,8 +147,9 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
 
     protected final EntityView viewEngine = new EntityView(this);
     protected final Set<Player> viewers = viewEngine.set;
-    private final MutableNBTCompound nbtCompound = new MutableNBTCompound();
+    private final TagHandler tagHandler = TagHandler.newHandler();
     private final Scheduler scheduler = Scheduler.newScheduler();
+    private final EventNode<EntityEvent> eventNode;
     private final Set<Permission> permissions = new CopyOnWriteArraySet<>();
 
     protected UUID uuid;
@@ -170,7 +182,7 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
         this.previousPosition = Pos.ZERO;
         this.lastSyncedPosition = Pos.ZERO;
 
-        setBoundingBox(entityType.width(), entityType.height(), entityType.width());
+        setBoundingBox(entityType.registry().boundingBox());
 
         this.entityMeta = EntityTypeImpl.createMeta(entityType, this, this.metadata);
 
@@ -179,6 +191,14 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
 
         this.gravityAcceleration = entityType.registry().acceleration();
         this.gravityDragPerTick = entityType.registry().drag();
+
+        final ServerProcess process = MinecraftServer.process();
+        if (process != null) {
+            this.eventNode = process.eventHandler().map(this, EventFilter.ENTITY);
+        } else {
+            // Local nodes require a server process
+            this.eventNode = null;
+        }
     }
 
     public Entity(@NotNull EntityType entityType) {
@@ -352,7 +372,7 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
     }
 
     @ApiStatus.Experimental
-    public void updateViewableRule(@NotNull Predicate<Player> predicate) {
+    public void updateViewableRule(@Nullable Predicate<Player> predicate) {
         this.viewEngine.viewableOption.updateRule(predicate);
     }
 
@@ -383,7 +403,7 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
     }
 
     @ApiStatus.Experimental
-    public void updateViewerRule(@NotNull Predicate<Entity> predicate) {
+    public void updateViewerRule(@Nullable Predicate<Entity> predicate) {
         this.viewEngine.viewerOption.updateRule(predicate);
     }
 
@@ -464,7 +484,7 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
      * Works by changing the internal entity type field and by calling {@link #removeViewer(Player)}
      * followed by {@link #addViewer(Player)} to all current viewers.
      * <p>
-     * Be aware that this only change the visual of the entity, the {@link net.minestom.server.collision.BoundingBox}
+     * Be aware that this only change the visual of the entity, the {@link BoundingBox}
      * will not be modified.
      *
      * @param entityType the new entity type
@@ -547,7 +567,8 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
         final Pos newPosition;
         final Vec newVelocity;
         if (this.hasPhysics) {
-            final var physicsResult = CollisionUtils.handlePhysics(this, deltaPos);
+            final var physicsResult = CollisionUtils.handlePhysics(this, deltaPos, lastPhysicsResult);
+            this.lastPhysicsResult = physicsResult;
             this.onGround = physicsResult.isOnGround();
             newPosition = physicsResult.newPosition();
             newVelocity = physicsResult.newVelocity();
@@ -605,26 +626,28 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
 
     private void touchTick() {
         // TODO do not call every tick (it is pretty expensive)
-        final int minX = (int) Math.floor(boundingBox.getMinX());
-        final int maxX = (int) Math.ceil(boundingBox.getMaxX());
-        final int minY = (int) Math.floor(boundingBox.getMinY());
-        final int maxY = (int) Math.ceil(boundingBox.getMaxY());
-        final int minZ = (int) Math.floor(boundingBox.getMinZ());
-        final int maxZ = (int) Math.ceil(boundingBox.getMaxZ());
+        final Pos position = this.position;
+        final BoundingBox boundingBox = this.boundingBox;
+        ChunkCache cache = new ChunkCache(instance, currentChunk);
+
+        final int minX = (int) Math.floor(boundingBox.minX() + position.x());
+        final int maxX = (int) Math.ceil(boundingBox.maxX() + position.x());
+        final int minY = (int) Math.floor(boundingBox.minY() + position.y());
+        final int maxY = (int) Math.ceil(boundingBox.maxY() + position.y());
+        final int minZ = (int) Math.floor(boundingBox.minZ() + position.z());
+        final int maxZ = (int) Math.ceil(boundingBox.maxZ() + position.z());
+
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    final Chunk chunk = ChunkUtils.retrieve(instance, currentChunk, x, z);
-                    if (!ChunkUtils.isLoaded(chunk))
-                        continue;
-                    final Block block = chunk.getBlock(x, y, z, Block.Getter.Condition.CACHED);
-                    if (block == null)
-                        continue;
+                    final Block block = cache.getBlock(x, y, z, Block.Getter.Condition.CACHED);
+                    if (block == null) continue;
                     final BlockHandler handler = block.handler();
                     if (handler != null) {
-                        // checks that we are actually in the block, and not just here because of a rounding error
-                        if (boundingBox.intersectWithBlock(x, y, z)) {
-                            // TODO: replace with check with custom block bounding box
+                        // Move a small amount towards the entity. If the entity is within 0.01 blocks of the block, touch will trigger
+                        Vec blockPos = new Vec(x, y, z);
+                        Point blockEntityVector = (blockPos.sub(position)).normalize().mul(0.01);
+                        if (block.registry().collisionShape().intersectBox(position.sub(blockPos).add(blockEntityVector), boundingBox)) {
                             handler.onTouch(new BlockHandler.Touch(block, instance, new Vec(x, y, z), this));
                         }
                     }
@@ -731,12 +754,12 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
      * <p>
      * WARNING: this does not change the entity hit-box which is client-side.
      *
-     * @param x the bounding box X size
-     * @param y the bounding box Y size
-     * @param z the bounding box Z size
+     * @param width  the bounding box X size
+     * @param height the bounding box Y size
+     * @param depth  the bounding box Z size
      */
-    public void setBoundingBox(double x, double y, double z) {
-        this.boundingBox = new BoundingBox(this, x, y, z);
+    public void setBoundingBox(double width, double height, double depth) {
+        this.boundingBox = new BoundingBox(width, height, depth);
     }
 
     /**
@@ -1333,12 +1356,12 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
     /**
      * Gets the entity eye height.
      * <p>
-     * Default to {@link BoundingBox#getHeight()}x0.85
+     * Default to {@link BoundingBox#height()}x0.85
      *
      * @return the entity eye height
      */
     public double getEyeHeight() {
-        return boundingBox.getHeight() * 0.85;
+        return boundingBox.height() * 0.85;
     }
 
     /**
@@ -1512,18 +1535,31 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
     }
 
     @Override
-    public <T> @Nullable T getTag(@NotNull Tag<T> tag) {
-        return tag.read(nbtCompound);
-    }
-
-    @Override
-    public <T> void setTag(@NotNull Tag<T> tag, @Nullable T value) {
-        tag.write(nbtCompound, value);
+    public @NotNull TagHandler tagHandler() {
+        return tagHandler;
     }
 
     @Override
     public @NotNull Scheduler scheduler() {
         return scheduler;
+    }
+
+    @Override
+    public @NotNull EntitySnapshot updateSnapshot(@NotNull SnapshotUpdater updater) {
+        final Chunk chunk = currentChunk;
+        final int[] viewersId = this.viewEngine.viewableOption.bitSet.toIntArray();
+        final int[] passengersId = ArrayUtils.mapToIntArray(passengers, Entity::getEntityId);
+        final Entity vehicle = this.vehicle;
+        return new EntitySnapshotImpl.Entity(entityType, uuid, id, position, velocity,
+                updater.reference(instance), chunk.getChunkX(), chunk.getChunkZ(),
+                viewersId, passengersId, vehicle == null ? -1 : vehicle.getEntityId(),
+                tagHandler.readableCopy());
+    }
+
+    @Override
+    @ApiStatus.Experimental
+    public @NotNull EventNode<EntityEvent> eventNode() {
+        return eventNode;
     }
 
     /**
@@ -1546,12 +1582,11 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
         }
     }
 
-
     /**
      * Gets the line of sight of the entity.
      *
      * @param maxDistance The max distance to scan
-     * @return A list of {@link Point poiints} in this entities line of sight
+     * @return A list of {@link Point points} in this entities line of sight
      */
     public List<Point> getLineOfSight(int maxDistance) {
         Instance instance = getInstance();
@@ -1582,19 +1617,8 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
             return false;
         }
 
-        final Vec start = getPosition().asVec().add(0D, getEyeHeight(), 0D);
-        final Vec end = entity.getPosition().asVec().add(0D, getEyeHeight(), 0D);
-        final Vec direction = end.sub(start);
-        final int maxDistance = (int) Math.ceil(direction.length());
-
-        var it = new BlockIterator(start, direction.normalize(), 0D, maxDistance);
-        while (it.hasNext()) {
-            Block block = instance.getBlock(it.next());
-            if (!block.isAir() && !block.isLiquid()) {
-                return false;
-            }
-        }
-        return true;
+        final Vec start = new Vec(position.x(), position.y() + getEyeHeight(), position.z());
+        return entity.boundingBox.boundingBoxRayIntersectionCheck(start, position.direction(), entity.getPosition());
     }
 
     /**
@@ -1610,43 +1634,15 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
             return null;
         }
 
-        Vec start = new Vec(position.x(), position.y() + getEyeHeight(), position.z());
-        Vec end = start.add(position.direction().mul(range));
+        final Vec start = new Vec(position.x(), position.y() + getEyeHeight(), position.z());
 
-        List<Entity> nearby = instance.getNearbyEntities(position, range).stream()
-                .filter(e -> e != this && e.boundingBox.intersect(start, end) && predicate.test(e)).toList();
-        if (nearby.isEmpty()) {
-            return null;
-        }
+        Optional<Entity> nearby = instance.getNearbyEntities(position, range).stream()
+                .filter(e -> e != this
+                        && e.boundingBox.boundingBoxRayIntersectionCheck(start, position.direction(), e.getPosition())
+                        && predicate.test(e))
+                .min(Comparator.comparingDouble(e -> e.getDistance(this.position)));
 
-        Vec direction = end.sub(start);
-        int maxDistance = (int) Math.ceil(direction.length());
-        double maxVisibleDistanceSquared = direction.lengthSquared();
-
-        var iterator = new BlockIterator(start, direction.normalize(), 0D, maxDistance);
-        while (iterator.hasNext()) {
-            Point blockPos = iterator.next();
-            Block block = instance.getBlock(blockPos);
-            if (!block.isAir() && !block.isLiquid()) {
-                maxVisibleDistanceSquared = blockPos.distanceSquared(position);
-                break;
-            }
-        }
-
-        Entity result = null;
-        double minDistanceSquared = 0D;
-        for (Entity entity : nearby) {
-            double distanceSquared = entity.getDistanceSquared(this);
-            if (result == null || minDistanceSquared > distanceSquared) {
-                result = entity;
-                minDistanceSquared = distanceSquared;
-            }
-        }
-        if (minDistanceSquared < maxVisibleDistanceSquared) {
-            return result;
-        } else {
-            return null;
-        }
+        return nearby.orElse(null);
     }
 
     public enum Pose {

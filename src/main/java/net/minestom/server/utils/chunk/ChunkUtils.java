@@ -79,8 +79,8 @@ public final class ChunkUtils {
     public static Chunk retrieve(Instance instance, Chunk originChunk, double x, double z) {
         final int chunkX = getChunkCoordinate(x);
         final int chunkZ = getChunkCoordinate(z);
-        final boolean sameChunk = originChunk.getChunkX() == chunkX &&
-                originChunk.getChunkZ() == chunkZ;
+        final boolean sameChunk = originChunk != null &&
+                originChunk.getChunkX() == chunkX && originChunk.getChunkZ() == chunkZ;
         return sameChunk ? originChunk : instance.getChunk(chunkX, chunkZ);
     }
 
@@ -253,10 +253,6 @@ public final class ChunkUtils {
      * @return section coordinate
      */
     public static int toSectionRelativeCoordinate(int xyz) {
-        xyz %= 16;
-        if (xyz < 0) {
-            xyz += Chunk.CHUNK_SECTION_SIZE;
-        }
-        return xyz;
+        return xyz & 0xF;
     }
 }

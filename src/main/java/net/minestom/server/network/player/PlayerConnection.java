@@ -3,6 +3,7 @@ package net.minestom.server.network.player;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.listener.manager.PacketListenerManager;
 import net.minestom.server.network.ConnectionState;
@@ -25,7 +26,7 @@ public abstract class PlayerConnection {
 
     private Player player;
     private volatile ConnectionState connectionState;
-    private boolean online;
+    volatile boolean online;
 
     // Text used to kick client sending too many packets
     private static final Component rateLimitKickMessage = Component.text("Too Many Packets", NamedTextColor.RED);
@@ -96,15 +97,6 @@ public abstract class PlayerConnection {
     }
 
     /**
-     * Flush waiting data to the connection.
-     * <p>
-     * Might not do anything depending on the implementation.
-     */
-    public void flush() {
-        // Empty
-    }
-
-    /**
      * Gets the remote address of the client.
      *
      * @return the remote address
@@ -146,7 +138,14 @@ public abstract class PlayerConnection {
     /**
      * Forcing the player to disconnect.
      */
-    public abstract void disconnect();
+    public void disconnect() {
+        this.online = false;
+        MinecraftServer.getConnectionManager().removePlayer(this);
+        final Player player = getPlayer();
+        if (player != null && !player.isRemoved()) {
+            player.scheduleNextTick(Entity::remove);
+        }
+    }
 
     /**
      * Gets the player linked to this connection.
@@ -175,10 +174,6 @@ public abstract class PlayerConnection {
      */
     public boolean isOnline() {
         return online;
-    }
-
-    public void refreshOnline(boolean online) {
-        this.online = online;
     }
 
     public void setConnectionState(@NotNull ConnectionState connectionState) {

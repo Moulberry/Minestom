@@ -1,13 +1,11 @@
 package net.minestom.server.listener;
 
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.collision.CollisionUtils;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
-import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
-import net.minestom.server.entity.metadata.other.ArmorStandMeta;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.player.PlayerBlockInteractEvent;
 import net.minestom.server.event.player.PlayerBlockPlaceEvent;
@@ -129,26 +127,7 @@ public class BlockPlacementListener {
         }
 
         final Block placedBlock = useMaterial.block();
-        final Set<Entity> entities = instance.getChunkEntities(chunk);
-        // Check if the player is trying to place a block in an entity
-        boolean intersect = player.getBoundingBox().intersectWithBlock(placementPosition);
-        if (!intersect && placedBlock.isSolid()) {
-            // TODO push entities too close to the position
-            for (Entity entity : entities) {
-                // 'player' has already been checked
-                if (entity == player ||
-                        entity.getEntityType() == EntityType.ITEM)
-                    continue;
-                // Marker Armor Stands should not prevent block placement
-                if (entity.getEntityMeta() instanceof ArmorStandMeta armorStandMeta) {
-                    if (armorStandMeta.isMarker()) continue;
-                }
-                intersect = entity.getBoundingBox().intersectWithBlock(placementPosition);
-                if (intersect)
-                    break;
-            }
-        }
-        if (intersect) {
+        if (!CollisionUtils.canPlaceBlockAt(instance, placementPosition, placedBlock)) {
             refresh(player, chunk);
             return;
         }
