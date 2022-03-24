@@ -190,6 +190,8 @@ public class BlockPlacementListener {
                     PlayerBlockUpdateNeighborEvent playerBlockUpdateNeighborEvent = new PlayerBlockUpdateNeighborEvent(player, block, position);
                     EventDispatcher.call(playerBlockUpdateNeighborEvent);
 
+                    if (playerBlockUpdateNeighborEvent.isCancelled()) continue;
+
                     if (playerBlockUpdateNeighborEvent.getBlock() != block) {
                         instance.setBlock(position, playerBlockUpdateNeighborEvent.getBlock());
                     }

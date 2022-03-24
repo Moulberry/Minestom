@@ -165,7 +165,7 @@ public final class Registry {
         private final boolean air;
         private final boolean solid;
         private final boolean liquid;
-	private final boolean isFullCube;
+	private final boolean fullCube;
         private final String blockEntity;
         private final int blockEntityId;
         private final Supplier<Material> materialSupplier;
@@ -187,7 +187,7 @@ public final class Registry {
             this.air = main.getBoolean("air", false);
             this.solid = main.getBoolean("solid");
             this.liquid = main.getBoolean("liquid", false);
-            this.isFullCube = main.getBoolean("isFullCube", false);
+            this.fullCube = main.getBoolean("fullCube", false);
             {
                 Properties blockEntity = main.section("blockEntity");
                 if (blockEntity != null) {
@@ -261,7 +261,7 @@ public final class Registry {
         }
 
 	public boolean isFullCube() {
-            return isFullCube;
+            return fullCube;
 	}
 
         public boolean isBlockEntity() {

@@ -11,7 +11,7 @@ import net.minestom.server.instance.block.Block;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class BlockCollision {
+public final class BlockCollision {
     // Minimum move amount, minimum final velocity
     private static final double MIN_DELTA = 0.001;
 
@@ -128,7 +128,7 @@ final class BlockCollision {
      * Works by getting all the full blocks that an entity could interact with.
      * All bounding boxes inside the full blocks are checked for collisions with the entity.
      */
-    static PhysicsResult handlePhysics(@NotNull BoundingBox boundingBox,
+    public static PhysicsResult handlePhysics(@NotNull BoundingBox boundingBox,
                                        @NotNull Vec entityVelocity, @NotNull Pos entityPosition,
                                        @NotNull Block.Getter getter,
                                        @Nullable PhysicsResult lastPhysicsResult) {

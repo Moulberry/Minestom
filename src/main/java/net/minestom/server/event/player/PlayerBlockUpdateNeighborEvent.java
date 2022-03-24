@@ -13,12 +13,13 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a player tries placing a block.
  */
-public class PlayerBlockUpdateNeighborEvent implements PlayerEvent, EntityInstanceEvent, BlockEvent {
+public class PlayerBlockUpdateNeighborEvent implements PlayerEvent, EntityInstanceEvent, BlockEvent, CancellableEvent {
 
     private final Player player;
     private Block block;
     private final Point blockPosition;
     private boolean shouldUpdateNeighbors = false;
+    private boolean cancelled = false;
 
     public PlayerBlockUpdateNeighborEvent(@NotNull Player player, @NotNull Block block,
                                           @NotNull Point blockPosition) {
@@ -62,6 +63,15 @@ public class PlayerBlockUpdateNeighborEvent implements PlayerEvent, EntityInstan
 
     public void setShouldUpdateNeighbors(boolean shouldUpdateNeighbors) {
         this.shouldUpdateNeighbors = shouldUpdateNeighbors;
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
     }
 
     @Override

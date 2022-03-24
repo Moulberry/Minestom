@@ -225,6 +225,8 @@ public class InstanceContainer extends Instance {
                         PlayerBlockUpdateNeighborEvent playerBlockUpdateNeighborEvent = new PlayerBlockUpdateNeighborEvent(player, neighbor, position);
                         EventDispatcher.call(playerBlockUpdateNeighborEvent);
 
+                        if (playerBlockUpdateNeighborEvent.isCancelled()) continue;
+
                         if (playerBlockUpdateNeighborEvent.getBlock() != neighbor) {
                             setBlock(position, playerBlockUpdateNeighborEvent.getBlock());
                         }
