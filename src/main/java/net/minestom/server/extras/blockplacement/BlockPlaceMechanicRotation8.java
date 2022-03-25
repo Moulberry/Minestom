@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 8 directional rotation for signs & banners
+ * 8 directional rotation for signs and banners
  */
 class BlockPlaceMechanicRotation8 {
 
