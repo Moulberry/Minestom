@@ -371,11 +371,8 @@ public final class BlockCollision {
                                     Block.Getter getter, SweepResult finalResult) {
         // Don't step if chunk isn't loaded yet
         final Block checkBlock = getter.getBlock(blockX, blockY, blockZ, Block.Getter.Condition.TYPE);
-        boolean hitBlock = false;
-        if (checkBlock.isSolid()) {
-            final Vec blockPos = new Vec(blockX, blockY, blockZ);
-            hitBlock = checkBlock.registry().collisionShape().intersectBoxSwept(entityPosition, entityVelocity, blockPos, boundingBox, finalResult);
-        }
-        return hitBlock;
+
+        final Vec blockPos = new Vec(blockX, blockY, blockZ);
+        return checkBlock.registry().collisionShape().intersectBoxSwept(entityPosition, entityVelocity, blockPos, boundingBox, finalResult);
     }
 }
