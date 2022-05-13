@@ -2,11 +2,14 @@ package net.minestom.server.tag;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jglrxavpok.hephaistos.nbt.NBT;
+import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.junit.jupiter.api.Test;
 
-import static net.minestom.server.api.TestUtils.assertEqualsIgnoreSpace;
+import java.util.Map;
+
+import static net.minestom.server.api.TestUtils.assertEqualsSNBT;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class TagViewTest {
 
@@ -20,12 +23,8 @@ public class TagViewTest {
         }
 
         @Override
-        public void write(@NotNull TagWritable writer, @Nullable Entry value) {
-            if (value != null) {
-                writer.setTag(VALUE_TAG, value.value);
-            } else {
-                writer.removeTag(VALUE_TAG);
-            }
+        public void write(@NotNull TagWritable writer, @NotNull Entry value) {
+            writer.setTag(VALUE_TAG, value.value);
         }
     });
 
@@ -53,14 +52,122 @@ public class TagViewTest {
         var handler = TagHandler.newHandler();
         var entry = new Entry("hello");
         handler.setTag(VIEW_TAG, entry);
-        assertEqualsIgnoreSpace("""
+        assertEqualsSNBT("""
                 {
-                  "value": "hello"
+                  "value":"hello"
                 }
-                """, handler.asCompound().toSNBT());
+                """, handler.asCompound());
 
         handler.removeTag(VIEW_TAG);
-        assertEqualsIgnoreSpace("{}", handler.asCompound().toSNBT());
+        assertEqualsSNBT("{}", handler.asCompound());
     }
 
+    @Test
+    public void snbtOverride() {
+        var handler = TagHandler.newHandler();
+        var entry = new Entry("hello");
+        handler.setTag(VIEW_TAG, entry);
+        assertEqualsSNBT("""
+                {
+                  "value":"hello"
+                }
+                """, handler.asCompound());
+
+        handler.setTag(Tag.Integer("value"), 5);
+        assertEqualsSNBT("""
+                {
+                  "value":5,
+                }
+                """, handler.asCompound());
+    }
+
+    @Test
+    public void empty() {
+        var handler = TagHandler.newHandler();
+        var tag = Tag.View(new TagSerializer<Entry>() {
+            @Override
+            public @Nullable Entry read(@NotNull TagReadable reader) {
+                // Empty
+                return null;
+            }
+
+            @Override
+            public void write(@NotNull TagWritable writer, @NotNull Entry value) {
+                // Empty
+            }
+        });
+        assertNull(handler.getTag(tag));
+        assertFalse(handler.hasTag(tag));
+
+        var entry = new Entry("hello");
+        handler.setTag(tag, entry);
+        assertNull(handler.getTag(tag));
+        assertFalse(handler.hasTag(tag));
+        assertEqualsSNBT("{}", handler.asCompound());
+
+        handler.removeTag(tag);
+        assertFalse(handler.hasTag(tag));
+        assertNull(handler.getTag(VIEW_TAG));
+        assertEqualsSNBT("{}", handler.asCompound());
+    }
+
+    @Test
+    public void path() {
+        var handler = TagHandler.newHandler();
+        var tag = VIEW_TAG.path("path");
+        assertNull(handler.getTag(tag));
+        assertFalse(handler.hasTag(tag));
+
+        var entry = new Entry("hello");
+        handler.setTag(tag, entry);
+        assertTrue(handler.hasTag(tag));
+        assertEquals(entry, handler.getTag(tag));
+
+        handler.removeTag(tag);
+        assertFalse(handler.hasTag(tag));
+        assertNull(handler.getTag(tag));
+    }
+
+    @Test
+    public void pathSnbt() {
+        var handler = TagHandler.newHandler();
+        var tag = VIEW_TAG.path("path");
+        var entry = new Entry("hello");
+        handler.setTag(tag, entry);
+        assertEqualsSNBT("""
+                {
+                  "path":{
+                    "value":"hello"
+                  }
+                }
+                """, handler.asCompound());
+
+        handler.removeTag(tag);
+        assertEqualsSNBT("{}", handler.asCompound());
+    }
+
+    @Test
+    public void compoundSerializer() {
+        var tag = Tag.View(TagSerializer.COMPOUND);
+        var handler = TagHandler.newHandler();
+        handler.setTag(tag, NBT.Compound(Map.of("value", NBT.String("hello"))));
+        assertEqualsSNBT("""
+                {
+                  "value":"hello"
+                }
+                """, handler.asCompound());
+
+        handler.setTag(Tag.Integer("value"), 5);
+        assertEqualsSNBT("""
+                {
+                  "value":5,
+                }
+                """, handler.asCompound());
+
+        handler.setTag(tag, NBTCompound.EMPTY);
+        assertEqualsSNBT("{}", handler.asCompound());
+
+        handler.setTag(tag, null);
+        assertEqualsSNBT("{}", handler.asCompound());
+    }
 }
