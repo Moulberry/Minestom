@@ -375,12 +375,6 @@ public final class BlockCollision {
                                     Vec entityVelocity, Pos entityPosition, BoundingBox boundingBox,
                                     Block.Getter getter, SweepResult finalResult) {
         // Don't step if chunk isn't loaded yet
-<<<<<<< HEAD
-        final Block checkBlock = getter.getBlock(blockX, blockY, blockZ, Block.Getter.Condition.TYPE);
-
-        final Vec blockPos = new Vec(blockX, blockY, blockZ);
-        return checkBlock.registry().collisionShape().intersectBoxSwept(entityPosition, entityVelocity, blockPos, boundingBox, finalResult);
-=======
         final Block currentBlock = getter.getBlock(blockX, blockY, blockZ, Block.Getter.Condition.TYPE);
         final Shape currentShape = currentBlock.registry().collisionShape();
 
@@ -471,6 +465,5 @@ public final class BlockCollision {
         corner
          */
         return m * (blockPos - pos + (m > 0 ? 1 : 0)) + entityY;
->>>>>>> upstream/master
     }
 }
